@@ -1,17 +1,37 @@
-import React from 'react';
-import { ScheduleBoard } from '@/components/schedule/ScheduleBoard';
+// app/manager/dashboard/page.tsx
 
-export default function DashboardPage() {
+import { getScheduleAction } from "@/actions/manager-booking.action";
+import { ScheduleBoard } from "@/components/schedule/ScheduleBoard";
+interface ManagerDashboardPageProps {
+  searchParams: Promise<{ date?: string }>;
+}
+
+function isValidDateString(s: string | undefined): s is string {
+  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+export default async function ManagerDashboardPage({ searchParams }: ManagerDashboardPageProps) {
+  const params = await searchParams;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const formattedDate = isValidDateString(params.date) ? params.date : todayStr;
+
+  const res = await getScheduleAction(formattedDate);
+  const schedule = res.success ? res.data : null;
+  const errorMessage = !res.success ? res.message : undefined;
+
   return (
-    <div className="h-full flex flex-col p-8">
+    <div className="h-full flex flex-col p-4 md:p-8">
       <div className="mb-6 flex flex-col space-y-1 shrink-0">
         <h1 className="text-2xl font-bold text-slate-900">Schedule Overview</h1>
         <p className="text-slate-500">Welcome back! Here&apos;s what&apos;s happening today.</p>
       </div>
-      
-      {/* The main schedule board component with drag & drop */}
+
       <div className="flex-1 min-h-0 bg-white rounded-lg border border-slate-200 flex flex-col">
-          <ScheduleBoard />
+        <ScheduleBoard
+          initialSchedule={schedule}
+          errorMessage={errorMessage}
+          initialDate={formattedDate}
+        />
       </div>
     </div>
   );
