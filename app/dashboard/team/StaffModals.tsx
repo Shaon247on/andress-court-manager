@@ -1,16 +1,101 @@
-'use client';
+// app/dashboard/team/StaffModals.tsx
+
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { StaffMember } from './page';
+import { createStaffAction, editStaffAction } from '@/actions/manager-team.action';
+import type { TeamStaff, TeamRole, TeamPermissions } from '@/types/ManagerTeam.type';
+import { toast } from 'sonner';
 
-const ALL_PERMISSIONS = ['Schedule', 'Customers', 'Bookings', 'Tournaments', 'Revenue', 'Help & Support'];
+const PERMISSIONS = [
+  { value: 'schedule', label: 'Schedule' },
+  { value: 'customers', label: 'Customers' },
+  { value: 'bookings', label: 'Bookings' },
+  { value: 'tournaments', label: 'Tournaments' },
+  { value: 'revenue', label: 'Revenue' },
+  { value: 'support', label: 'Help & Support' },
+  { value: 'court_management', label: 'Court Management' },
+];
 
-export function AddStaffModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+const DEFAULT_PERMISSIONS: TeamPermissions = {
+  schedule: false,
+  customers: false,
+  bookings: false,
+  tournaments: false,
+  revenue: false,
+  support: false,
+  court_management: false,
+};
+
+interface AddStaffModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  roles: TeamRole[];
+}
+
+export function AddStaffModal({ isOpen, onClose, roles }: AddStaffModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [roleName, setRoleName] = useState('');
+  const [permissions, setPermissions] = useState<TeamPermissions>(DEFAULT_PERMISSIONS);
+
+  const resetForm = () => {
+    setName('');
+    setEmail('');
+    setRoleName('');
+    setPermissions(DEFAULT_PERMISSIONS);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
+
+  const togglePermission = (key: keyof TeamPermissions) => {
+    setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !email.trim() || !roleName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    const res = await createStaffAction({
+      name,
+      email,
+      role_name: roleName,
+      permissions,
+    });
+
+    if (res.success) {
+      toast.success(res.data.message);
+      resetForm();
+      onClose();
+      window.location.reload();
+    } else {
+      toast.error(res.message);
+    }
+    setLoading(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -26,53 +111,151 @@ export function AddStaffModal({ isOpen, onClose }: { isOpen: boolean, onClose: (
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="bg-white rounded-xl shadow-xl w-full max-w-[400px] relative z-10 flex flex-col max-h-[90vh]"
+        className="bg-white rounded-xl shadow-xl w-full max-w-[440px] relative z-10 flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-slate-900">Add Staff</h2>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
-              <X className="w-5 h-5" />
-            </button>
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+          <h2 className="text-lg font-bold text-slate-900">Add Staff</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
-        <div className="p-6 space-y-5 overflow-y-auto">
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Name *</label>
-             <Input className="h-10" />
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
-             <Input className="h-10" />
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Role Name *</label>
-             <Input className="h-10" placeholder="e.g. Receptionist, Manager" />
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-3">Access Permissions</label>
-             <div className="space-y-3">
-               {ALL_PERMISSIONS.map(p => (
-                 <label key={p} className="flex items-center space-x-3 cursor-pointer group">
-                   <div className="w-4 h-4 rounded border-2 border-slate-300 flex items-center justify-center transition-colors group-hover:border-primary">
-                     {/* Checkbox mock */}
-                   </div>
-                   <span className="text-sm font-medium text-slate-700">{p}</span>
-                 </label>
-               ))}
-             </div>
-           </div>
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Name <span className="text-red-500">*</span>
+            </Label>
+            <Input 
+              className="h-10" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter full name"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Email <span className="text-red-500">*</span>
+            </Label>
+            <Input 
+              className="h-10" 
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Role <span className="text-red-500">*</span>
+            </Label>
+            <Select value={roleName} onValueChange={setRoleName}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+              Access Permissions
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PERMISSIONS.map((p) => (
+                <label key={p.value} className="flex items-center space-x-2 cursor-pointer group">
+                  <Checkbox
+                    checked={permissions[p.value as keyof TeamPermissions]}
+                    onCheckedChange={() => togglePermission(p.value as keyof TeamPermissions)}
+                    className="rounded border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className="text-sm font-medium text-slate-700">{p.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="p-6 border-t border-slate-100 flex justify-end space-x-3">
-           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-           <Button variant="primary" onClick={onClose}>Send Invite</Button>
+        <div className="p-6 border-t border-slate-100 flex justify-end space-x-3 shrink-0">
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Send Invite
+          </Button>
         </div>
       </motion.div>
     </div>
   );
 }
 
-export function EditStaffModal({ isOpen, onClose, staff }: { isOpen: boolean, onClose: () => void, staff: StaffMember }) {
+interface EditStaffModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  staff: TeamStaff;
+  roles: TeamRole[];
+  onSuccess?: () => void;
+}
+
+export function EditStaffModal({ isOpen, onClose, staff, roles, onSuccess }: EditStaffModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState(staff?.name || '');
+  const [email, setEmail] = useState(staff?.email || '');
+  const [roleName, setRoleName] = useState(staff?.role_name || '');
+  const [status, setStatus] = useState<'active' | 'pending' | 'inactive'>(staff?.status || 'pending');
+  const [permissions, setPermissions] = useState<TeamPermissions>(
+    staff?.permissions || DEFAULT_PERMISSIONS
+  );
+
+  useEffect(() => {
+    if (staff) {
+      setName(staff.name);
+      setEmail(staff.email);
+      setRoleName(staff.role_name);
+      setStatus(staff.status);
+      setPermissions(staff.permissions);
+    }
+  }, [staff]);
+
+  const togglePermission = (key: keyof TeamPermissions) => {
+    setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSubmit = async () => {
+    if (!staff) return;
+    if (!name.trim() || !email.trim() || !roleName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    const res = await editStaffAction(staff.id, {
+      name,
+      email,
+      role_name: roleName,
+      status,
+      permissions,
+    });
+
+    if (res.success) {
+      toast.success(res.data.message);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onClose();
+        window.location.reload();
+      }
+    } else {
+      toast.error(res.message);
+    }
+    setLoading(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -88,56 +271,104 @@ export function EditStaffModal({ isOpen, onClose, staff }: { isOpen: boolean, on
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="bg-white rounded-xl shadow-xl w-full max-w-[400px] relative z-10 flex flex-col max-h-[90vh]"
+        className="bg-white rounded-xl shadow-xl w-full max-w-[440px] relative z-10 flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-slate-900">Edit Staff Member</h2>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
-              <X className="w-5 h-5" />
-            </button>
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+          <h2 className="text-lg font-bold text-slate-900">Edit Staff Member</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
-        <div className="p-6 space-y-5 overflow-y-auto">
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Name *</label>
-             <Input className="h-10" defaultValue={staff.name} />
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
-             <Input className="h-10" defaultValue={staff.email} />
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Role Name *</label>
-             <Input className="h-10" defaultValue={staff.role} />
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Status *</label>
-             <select className="w-full flex h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-               <option>Active</option>
-               <option>Pending</option>
-             </select>
-           </div>
-           <div>
-             <label className="block text-sm font-semibold text-slate-700 mb-2">Access Permissions</label>
-             <div className="border border-slate-200 rounded-lg p-4 space-y-4">
-               {ALL_PERMISSIONS.slice(0,4).map(p => (
-                 <label key={p} className="flex items-center space-x-3 cursor-pointer group">
-                   <div className="text-sm font-medium text-slate-700 ml-5">{p}</div>
-                 </label>
-               ))}
-             </div>
-           </div>
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Name <span className="text-red-500">*</span>
+            </Label>
+            <Input 
+              className="h-10" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter full name"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Email <span className="text-red-500">*</span>
+            </Label>
+            <Input 
+              className="h-10" 
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Role <span className="text-red-500">*</span>
+            </Label>
+            <Select value={roleName} onValueChange={setRoleName}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Status <span className="text-red-500">*</span>
+            </Label>
+            <Select value={status} onValueChange={(val) => setStatus(val as 'active' | 'pending' | 'inactive')}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+              Access Permissions
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PERMISSIONS.map((p) => (
+                <label key={p.value} className="flex items-center space-x-2 cursor-pointer group">
+                  <Checkbox
+                    checked={permissions[p.value as keyof TeamPermissions]}
+                    onCheckedChange={() => togglePermission(p.value as keyof TeamPermissions)}
+                    className="rounded border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <span className="text-sm font-medium text-slate-700">{p.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
 
-           <div className="bg-green-50 border border-primary/40 rounded-lg p-4">
-             <p className="text-xs text-primary/80 leading-relaxed font-medium">
-               <strong className="text-primary">Note:</strong> Changes will take effect immediately. The staff member may need to log out and log back in to see updated permissions.
-             </p>
-           </div>
+          <div className="bg-green-50 border border-primary/40 rounded-lg p-4">
+            <p className="text-xs text-primary/80 leading-relaxed font-medium">
+              <strong className="text-primary">Note:</strong> Changes will take effect immediately. The staff member may need to log out and log back in to see updated permissions.
+            </p>
+          </div>
         </div>
 
-        <div className="p-6 border-t border-slate-100 flex justify-end space-x-3">
-           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-           <Button variant="primary" onClick={onClose}>Save Changes</Button>
+        <div className="p-6 border-t border-slate-100 flex justify-end space-x-3 shrink-0">
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Save Changes
+          </Button>
         </div>
       </motion.div>
     </div>

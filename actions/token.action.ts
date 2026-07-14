@@ -1,5 +1,3 @@
-// actions/token.action.ts
-
 "use server";
 
 import { getAccessToken } from "@/lib/cookies";
