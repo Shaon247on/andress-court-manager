@@ -9,6 +9,7 @@ import {
   changePasswordSchema,
   updateScheduleSchema,
   updateCancellationSchema,
+  updateVenueSettingsSchema,
 } from "@/schemas/Settings.schema";
 import { updateSession } from "@/lib/cookies";
 import type {
@@ -23,6 +24,8 @@ import type {
   ChangePasswordPayload,
   ChangePasswordResponse,
   CancellationResponse,
+  VenueSettingsResponse,
+  UpdateVenueSettingsResponse,
 } from "@/types/Settings.type";
 
 // ── GET profile ────────────────────────────────────────────────────────────
@@ -285,6 +288,132 @@ export async function changePasswordAction(
     }
 
     return { success: true, data: result.data as ChangePasswordResponse };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// ── GET venue settings ─────────────────────────────────────────────────────
+
+export async function getVenueSettingsAction(): Promise<
+  | { success: true; data: VenueSettingsResponse }
+  | { success: false; message: string }
+> {
+  try {
+    const api = await getServerApi();
+    const response = await api.get("/manager/settings/venue-location/");
+    const result = handleActionResponse(response.data);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message ?? "Failed to load venue settings",
+      };
+    }
+
+    return { success: true, data: result.data as VenueSettingsResponse };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// ── UPDATE venue settings ─────────────────────────────────────────────────
+
+export async function updateVenueSettingsAction(
+  raw: FormData,
+): Promise<
+  | { success: true; data: UpdateVenueSettingsResponse }
+  | { success: false; message: string }
+> {
+  try {
+    // Extract and validate text fields
+    const club_name = (raw.get("club_name") as string) || undefined;
+    const street_address = (raw.get("street_address") as string) || undefined;
+    const city = (raw.get("city") as string) || undefined;
+    const latitude = raw.get("latitude") ? parseFloat(raw.get("latitude") as string) : undefined;
+    const longitude = raw.get("longitude") ? parseFloat(raw.get("longitude") as string) : undefined;
+    
+    // Get all image files
+    const images: File[] = [];
+    for (const [key, value] of raw.entries()) {
+      if (key.startsWith("images") && value instanceof File) {
+        images.push(value);
+      }
+    }
+
+    // Validate the data
+    const validationResult = updateVenueSettingsSchema.safeParse({
+      club_name,
+      street_address,
+      city,
+      latitude,
+      longitude,
+      images: images.length > 0 ? images : undefined,
+    });
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        message: validationResult.error.issues[0]?.message ?? "Invalid input",
+      };
+    }
+
+    // Create FormData for the API
+    const formData = new FormData();
+    
+    // Add text fields
+    const fields = [
+      { key: "club_name", value: club_name },
+      { key: "street_address", value: street_address },
+      { key: "city", value: city },
+      { key: "latitude", value: latitude?.toString() },
+      { key: "longitude", value: longitude?.toString() },
+    ];
+
+    for (const field of fields) {
+      if (field.value) {
+        formData.append(field.key, field.value);
+      }
+    }
+
+    // Add images
+    for (const image of images) {
+      // Validate file size (5MB)
+      if (image.size > 5 * 1024 * 1024) {
+        return {
+          success: false,
+          message: `Image ${image.name} must be less than 5MB`,
+        };
+      }
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!validTypes.includes(image.type)) {
+        return {
+          success: false,
+          message: `Image ${image.name} must be JPG, PNG, GIF, or WEBP format`,
+        };
+      }
+      formData.append("images", image);
+    }
+
+    const api = await getServerApi();
+    const response = await api.patch("/manager/settings/venue-location/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    const result = handleActionResponse(response.data);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message ?? "Failed to update venue settings",
+      };
+    }
+
+    return { success: true, data: result.data as UpdateVenueSettingsResponse };
   } catch (error) {
     const err = handleApiError(error);
     return { success: false, message: err.message };

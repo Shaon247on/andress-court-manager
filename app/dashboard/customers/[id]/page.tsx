@@ -8,6 +8,8 @@ export default async function CustomerDetailsPage({
 }) {
   const { id } = await params || { id: '' };
   
+  console.log("receiving ID:",id)
+  
   if (!id) {
     return (
       <div className="h-full flex flex-col p-8 bg-white overflow-y-auto">
@@ -20,8 +22,9 @@ export default async function CustomerDetailsPage({
 
   // Get all customers to find the specific one (since we don't have a details API)
   const customersRes = await getCustomersAction({ search: '', filter: 'all', page: 1 });
+  console.log("ID:",customersRes)
   const customer = customersRes.success 
-    ? customersRes.data.customers.find(c => c.id === id) 
+    ? customersRes.data.customers.find(c => c.user_id  === id) 
     : null;
 
   if (!customer) {

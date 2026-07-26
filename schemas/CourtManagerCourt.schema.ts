@@ -9,7 +9,6 @@ export const courtsQuerySchema = z.object({
 
 export const createCourtSchema = z.object({
   name: z.string().min(1, "Court name is required"),
-  description: z.string().optional(),
   court_type: z.enum(["indoor", "outdoor", "both"]),
   game_formats: z
     .array(z.string())
@@ -19,7 +18,6 @@ export const createCourtSchema = z.object({
 
 export const updateCourtSchema = z.object({
   name: z.string().min(1, "Court name is required"),
-  description: z.string().optional(),
   court_type: z.enum(["indoor", "outdoor", "both"]),
   game_formats: z
     .array(z.string())

@@ -125,7 +125,7 @@ export default function CourtManagerLogin() {
           <div className="mt-8 text-center text-sm text-slate-500">
             <p>Login issues? <a href="#" className="text-primary hover:underline">Visit our Help Article</a></p>
             <p className="mt-2">
-              Want to list your club on <strong className="text-slate-800">AthlonGO</strong>? <Link href="/manager/register" className="text-primary hover:underline">Get started</Link>
+              Want to list your club on <strong className="text-slate-800">AthlonGO</strong>? <Link href="/register" className="text-primary hover:underline">Get started</Link>
             </p>
           </div>
         </div>

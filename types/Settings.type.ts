@@ -1,3 +1,5 @@
+// types/Settings.type.ts
+
 export interface Profile {
   full_name: string;
   email: string;
@@ -84,4 +86,50 @@ export interface ChangePasswordPayload {
 export interface ChangePasswordResponse {
   success: boolean;
   message: string;
+}
+
+// ── Club/Venue Information Types ──
+
+export interface VenueLocation {
+  latitude: number;
+  longitude: number;
+  street_address: string;
+  city: string;
+}
+
+export interface VenueImage {
+  id: string;
+  url: string;
+  is_cover: boolean;
+  order: number;
+}
+
+export interface VenueSettings {
+  club_name: string;
+  location: VenueLocation;
+  images: VenueImage[]; // Now an array of VenueImage objects
+}
+
+export interface VenueSettingsResponse {
+  success: boolean;
+  location: VenueLocation;
+  club_name: string;
+  images: VenueImage[]; // Array of image objects
+}
+
+export interface UpdateVenueSettingsPayload {
+  club_name?: string;
+  street_address?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  images?: File[];
+}
+
+export interface UpdateVenueSettingsResponse {
+  success: boolean;
+  message: string;
+  location: VenueLocation;
+  club_name: string;
+  images: VenueImage[]; // Array of image objects
 }

@@ -1,3 +1,5 @@
+// types/Booking.type.ts
+
 export interface BookingCards {
   total_bookings: number;
   available_slots: number;
@@ -49,7 +51,8 @@ export interface BookingParticipant {
   is_game_owner: boolean;
   amount_to_pay: string;
   is_paid: boolean;
-  app_user_id: string;
+  user_id: string;
+  photo_url: string;
 }
 
 export interface BookingPlayerSlot {
@@ -61,6 +64,7 @@ export interface BookingPlayerSlot {
   ovr?: number;
   is_paid?: boolean;
   amount?: string;
+  user_id?: string; // ── Add this field ──
 }
 
 export interface BookingTeamDetail {

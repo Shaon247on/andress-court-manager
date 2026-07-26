@@ -1,5 +1,3 @@
-// app/dashboard/support/components/ManagerSupportClient.tsx
-
 "use client";
 
 import React, { useState, useEffect } from 'react';

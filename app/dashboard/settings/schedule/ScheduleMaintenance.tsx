@@ -155,7 +155,7 @@ export default function ScheduleMaintenance({
         </div>
       </div>
 
-      <div className="max-w-3xl pb-10 w-full space-y-6 sm:space-y-8">
+      <div className="max-w-3xl pb-10 w-full space-y-6 sm:space-y-8 mx-auto">
         {/* Weekly Schedule Section */}
         <form onSubmit={handleScheduleSubmit}>
           <div className="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden">

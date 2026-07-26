@@ -28,7 +28,7 @@ const PERMISSIONS = [
   { value: 'tournaments', label: 'Tournaments' },
   { value: 'revenue', label: 'Revenue' },
   { value: 'support', label: 'Help & Support' },
-  { value: 'court_management', label: 'Court Management' },
+  { value: 'courts', label: 'Court Management' },
 ];
 
 const DEFAULT_PERMISSIONS: TeamPermissions = {
@@ -38,7 +38,7 @@ const DEFAULT_PERMISSIONS: TeamPermissions = {
   tournaments: false,
   revenue: false,
   support: false,
-  court_management: false,
+  courts: false,
 };
 
 interface AddStaffModalProps {

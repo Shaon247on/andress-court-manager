@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Gift, Edit2, Ban, UserPlus, MoreVertical, Eye, Plus, Loader2, X, Percent, DollarSign } from 'lucide-react';
+import { Gift , Ban, UserPlus, MoreVertical, Eye, Plus, Loader2, X, Percent, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -135,7 +135,7 @@ export default function CustomersList({
     if (!benefitCustomer) return;
     setAddingBenefit(true);
     
-    const res = await addBenefitAction(benefitCustomer.id, {
+    const res = await addBenefitAction(benefitCustomer.user_id, {
       benefit_type: benefitType,
       value: benefitValue,
       apply_on: applyOn,
@@ -265,20 +265,11 @@ export default function CustomersList({
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem asChild>
                             <Link 
-                              href={`/dashboard/customers/${customer.id}`}
+                              href={`/dashboard/customers/${customer.user_id}`}
                               className="flex items-center gap-2 cursor-pointer"
                             >
                               <Eye className="h-4 w-4" />
                               <span>View Details</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link 
-                              href={`/dashboard/customers/${customer.id}/edit`}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                              <span>Edit Customer</span>
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem

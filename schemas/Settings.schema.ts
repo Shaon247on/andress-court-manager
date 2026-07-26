@@ -1,3 +1,5 @@
+// schemas/Settings.schema.ts
+
 import { z } from 'zod';
 
 export const dayScheduleSchema = z.object({
@@ -42,5 +44,17 @@ export const updateCancellationSchema = z.object({
   cancellation_hours: z.number().min(0, 'Cancellation hours must be at least 0'),
 });
 
+// ── Venue Settings Schema ──
+
+export const updateVenueSettingsSchema = z.object({
+  club_name: z.string().min(1, 'Club name is required').optional(),
+  street_address: z.string().min(1, 'Street address is required').optional(),
+  city: z.string().min(1, 'City is required').optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  images: z.array(z.instanceof(File)).optional(),
+});
+
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 export type ProfileFormValues = z.infer<typeof profileUpdateSchema>;
+export type UpdateVenueSettingsFormValues = z.infer<typeof updateVenueSettingsSchema>;

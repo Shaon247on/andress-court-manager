@@ -248,7 +248,7 @@ export default function BookingsList({
           </button>
         </div>
 
-        <div className="flex items-center gap-2 w-full lg:w-auto">
+        <div className="flex items-center gap-2 w-full lg:w-100">
           <div className="flex items-center border border-slate-200 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 bg-white flex-1 lg:flex-none">
             <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400 mr-1 sm:mr-2 shrink-0" />
             <Input
@@ -316,7 +316,7 @@ export default function BookingsList({
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
                       <div className="font-medium text-slate-900 text-sm">
-                        ${parseFloat(booking.amount).toFixed(2)}
+                        €{parseFloat(booking.amount).toFixed(2)}
                       </div>
                       <PaymentTypeBadge type={booking.payment_type} />
                     </td>

@@ -26,8 +26,14 @@ const nextConfig: NextConfig = {
   },
   output: "standalone",
   transpilePackages: ["motion"],
+  // ── Add the experimental section with serverActions bodySizeLimit ──
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Set the limit to 10MB
+    },
+  },
   webpack: (config, { dev }) => {
-    // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+    // Do not modify—file watching is disabled to prevent flickering during agent edits.
     if (dev && process.env.DISABLE_HMR === "false") {
       config.watchOptions = {
         ignored: /.*/,

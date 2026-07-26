@@ -2,17 +2,28 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { MoreVertical, Eye, Pencil, Wrench, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  MoreVertical,
+  Eye,
+  Pencil,
+  Wrench,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Clock,
+  AlertCircle,
+  Settings2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -29,13 +40,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import SearchInput from '@/components/common/SearchInput';
-import Pagination from '@/components/common/Pagination';
-import SelectFilter from '@/components/common/SelectFilter';
-import { updateCourtStatusAction, deleteCourtAction } from '@/actions/court-manager-court.action';
-import type { CourtResult, CourtStats } from '@/types/CourtManagerCourt.type';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import SearchInput from "@/components/common/SearchInput";
+import Pagination from "@/components/common/Pagination";
+import SelectFilter from "@/components/common/SelectFilter";
+import {
+  updateCourtStatusAction,
+  deleteCourtAction,
+} from "@/actions/court-manager-court.action";
+import type { CourtResult, CourtStats } from "@/types/CourtManagerCourt.type";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface CourtsListProps {
   courts: CourtResult[];
@@ -46,13 +60,24 @@ interface CourtsListProps {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusMap: Record<string, { label: string; className: string }> = {
-    active: { label: 'Active', className: 'bg-green-100 text-green-700 border-green-200' },
-    under_maintenance: { label: 'Maintenance', className: 'bg-orange-100 text-orange-700 border-orange-200' },
-    closed: { label: 'Closed', className: 'bg-red-100 text-red-700 border-red-200' },
+    active: {
+      label: "Active",
+      className: "bg-green-100 text-green-700 border-green-200",
+    },
+    under_maintenance: {
+      label: "Maintenance",
+      className: "bg-orange-100 text-orange-700 border-orange-200",
+    },
+    closed: {
+      label: "Closed",
+      className: "bg-red-100 text-red-700 border-red-200",
+    },
   };
   const { label, className } = statusMap[status] || statusMap.active;
   return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${className}`}>
+    <span
+      className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${className}`}
+    >
       {label}
     </span>
   );
@@ -60,12 +85,14 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const CourtTypeBadge = ({ type }: { type: string }) => {
   const typeMap: Record<string, string> = {
-    indoor: 'bg-blue-100 text-blue-700',
-    outdoor: 'bg-emerald-100 text-emerald-700',
-    both: 'bg-purple-100 text-purple-700',
+    indoor: "bg-blue-100 text-blue-700",
+    outdoor: "bg-emerald-100 text-emerald-700",
+    both: "bg-purple-100 text-purple-700",
   };
   return (
-    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${typeMap[type] || 'bg-gray-100 text-gray-700'}`}>
+    <span
+      className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${typeMap[type] || "bg-gray-100 text-gray-700"}`}
+    >
       {type.charAt(0).toUpperCase() + type.slice(1)}
     </span>
   );
@@ -80,15 +107,15 @@ const GameFormatBadge = ({ format }: { format: string }) => {
 };
 
 const StatusOptions = [
-  { label: 'Active', value: 'active' },
-  { label: 'Under Maintenance', value: 'under_maintenance' },
-  { label: 'Closed', value: 'closed' },
+  { label: "Active", value: "active" },
+  { label: "Under Maintenance", value: "under_maintenance" },
+  { label: "Closed", value: "closed" },
 ];
 
 const CourtTypeOptions = [
-  { label: 'Indoor', value: 'indoor' },
-  { label: 'Outdoor', value: 'outdoor' },
-  { label: 'Both', value: 'both' },
+  { label: "Indoor", value: "indoor" },
+  { label: "Outdoor", value: "outdoor" },
+  // { label: "Both", value: "both" },
 ];
 
 export default function CourtsList({
@@ -101,13 +128,17 @@ export default function CourtsList({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCourt, setSelectedCourt] = useState<CourtResult | null>(null);
-  const [newStatus, setNewStatus] = useState<'active' | 'under_maintenance' | 'closed'>('active');
+  const [newStatus, setNewStatus] = useState<
+    "active" | "under_maintenance" | "closed"
+  >("active");
   const [loading, setLoading] = useState(false);
 
   const handleStatusChange = async () => {
     if (!selectedCourt) return;
     setLoading(true);
-    const res = await updateCourtStatusAction(selectedCourt.id, { status: newStatus });
+    const res = await updateCourtStatusAction(selectedCourt.id, {
+      status: newStatus,
+    });
     if (res.success) {
       toast.success(res.data.message);
       router.refresh();
@@ -134,7 +165,10 @@ export default function CourtsList({
     setSelectedCourt(null);
   };
 
-  const openStatusDialog = (court: CourtResult, status: 'active' | 'under_maintenance' | 'closed') => {
+  const openStatusDialog = (
+    court: CourtResult,
+    status: "active" | "under_maintenance" | "closed",
+  ) => {
     setSelectedCourt(court);
     setNewStatus(status);
     setStatusDialogOpen(true);
@@ -161,23 +195,35 @@ export default function CourtsList({
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 shrink-0">
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
-          <div className="text-sm font-medium text-slate-500 mb-1">Total Courts</div>
-          <div className="text-2xl sm:text-3xl font-bold text-slate-900">{stats?.total ?? 0}</div>
+          <div className="text-sm font-medium text-slate-500 mb-1">
+            Total Courts
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-slate-900">
+            {stats?.total ?? 0}
+          </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
-          <div className="text-sm font-medium text-slate-500 mb-1">Available</div>
-          <div className="text-2xl sm:text-3xl font-bold text-green-600">{stats?.available ?? 0}</div>
+          <div className="text-sm font-medium text-slate-500 mb-1">
+            Available
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-green-600">
+            {stats?.available ?? 0}
+          </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
-          <div className="text-sm font-medium text-slate-500 mb-1">Under Maintenance</div>
-          <div className="text-2xl sm:text-3xl font-bold text-orange-500">{stats?.under_maintenance ?? 0}</div>
+          <div className="text-sm font-medium text-slate-500 mb-1">
+            Under Maintenance
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-orange-500">
+            {stats?.under_maintenance ?? 0}
+          </div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
+        {/* <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
           <div className="text-sm font-medium text-slate-500 mb-1">Closed</div>
           <div className="text-2xl sm:text-3xl font-bold text-red-500">{stats?.closed ?? 0}</div>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters and Actions */}
@@ -199,12 +245,23 @@ export default function CourtsList({
             />
           </div>
         </div>
-
-        <Link href="/dashboard/courts/new" className="w-full sm:w-auto">
-          <Button variant="primary" className="h-10 w-full sm:w-auto">
-            <span className="mr-2">+</span> Add Court
-          </Button>
-        </Link>
+        <div className="flex gap-4">
+          <Link href="/dashboard/settings/schedule">
+            <Button
+              variant="outline"
+              className="h-10 px-4 border-border text-sm font-medium"
+            >
+              <Settings2 className="w-4 h-4 mr-2" />
+              Schedule Management
+            </Button>
+          </Link>
+          
+          <Link href="/dashboard/courts/new" className="w-full sm:w-auto">
+            <Button variant="primary" className="h-10 w-full sm:w-auto">
+              <span className="mr-2">+</span> Add Court
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Table */}
@@ -213,20 +270,39 @@ export default function CourtsList({
           <Table>
             <TableHeader className="bg-slate-50 border-b border-slate-200">
               <TableRow>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold">Court</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden md:table-cell">Type / Surface</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden lg:table-cell">Formats</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold">Status</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden sm:table-cell">Price/hr</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden lg:table-cell">Bookings</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden lg:table-cell">Revenue</TableHead>
-                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold text-right">Action</TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                  Court
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden md:table-cell">
+                  Type / Surface
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden lg:table-cell">
+                  Formats
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                  Status
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden sm:table-cell">
+                  Price/hr
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden lg:table-cell">
+                  Bookings
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold hidden lg:table-cell">
+                  Revenue
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-wider font-semibold text-right">
+                  Action
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {courts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="px-6 py-8 text-center text-slate-500">
+                  <TableCell
+                    colSpan={8}
+                    className="px-6 py-8 text-center text-slate-500"
+                  >
                     No courts found.
                   </TableCell>
                 </TableRow>
@@ -235,16 +311,24 @@ export default function CourtsList({
                   <TableRow key={court.id} className="hover:bg-slate-50/50">
                     <TableCell className="px-4 sm:px-6 py-4">
                       <div>
-                        <div className="font-bold text-slate-900 text-sm sm:text-base">{court.name}</div>
-                        <div className="text-xs text-slate-500">Location: {court.location}</div>
+                        <div className="font-bold text-slate-900 text-sm sm:text-base">
+                          {court.name}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Location: {court.location}
+                        </div>
                         <div className="text-xs text-slate-500 sm:hidden mt-1">
                           <CourtTypeBadge type={court.court_type} />
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 hidden md:table-cell">
-                      <div className="font-medium text-slate-900 capitalize">{court.court_type}</div>
-                      <div className="text-slate-500 text-xs capitalize">{court.surface}</div>
+                      <div className="font-medium text-slate-900 capitalize">
+                        {court.court_type}
+                      </div>
+                      <div className="text-slate-500 text-xs capitalize">
+                        {court.surface}
+                      </div>
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1">
@@ -257,13 +341,15 @@ export default function CourtsList({
                       <StatusBadge status={court.status} />
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                      <div className="font-bold text-slate-900">${court.price_per_hour}</div>
+                      <div className="font-bold text-slate-900">
+                        €{court.price_per_hour}
+                      </div>
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell text-slate-900">
                       {court.bookings}
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell font-bold text-green-600">
-                      ${parseFloat(court.revenue).toLocaleString()}
+                      €{parseFloat(court.revenue).toLocaleString()}
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 text-right">
                       <DropdownMenu>
@@ -273,33 +359,43 @@ export default function CourtsList({
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/courts/${court.id}`)}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(`/dashboard/courts/${court.id}`)
+                            }
+                          >
                             <Eye className="w-4 h-4 mr-2 text-slate-500" />
                             View
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/courts/${court.id}/edit`)}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(`/dashboard/courts/${court.id}/edit`)
+                            }
+                          >
                             <Pencil className="w-4 h-4 mr-2 text-slate-500" />
                             Edit
                           </DropdownMenuItem>
-                          {court.status !== 'active' && (
+                          {court.status !== "active" && (
                             <DropdownMenuItem
-                              onClick={() => openStatusDialog(court, 'active')}
+                              onClick={() => openStatusDialog(court, "active")}
                               className="text-green-600 focus:text-green-700"
                             >
                               <CheckCircle2 className="w-4 h-4 mr-2" />
                               Set Active
                             </DropdownMenuItem>
                           )}
-                          {court.status !== 'under_maintenance' && (
+                          {court.status !== "under_maintenance" && (
                             <DropdownMenuItem
-                              onClick={() => openStatusDialog(court, 'under_maintenance')}
+                              onClick={() =>
+                                openStatusDialog(court, "under_maintenance")
+                              }
                               className="text-orange-600 focus:text-orange-700"
                             >
                               <Wrench className="w-4 h-4 mr-2" />
                               Set Maintenance
                             </DropdownMenuItem>
                           )}
-                          {court.status !== 'closed' && (
+                          {/* {court.status !== 'closed' && (
                             <DropdownMenuItem
                               onClick={() => openStatusDialog(court, 'closed')}
                               className="text-red-600 focus:text-red-700"
@@ -307,7 +403,7 @@ export default function CourtsList({
                               <XCircle className="w-4 h-4 mr-2" />
                               Set Closed
                             </DropdownMenuItem>
-                          )}
+                          )} */}
                           <DropdownMenuItem
                             onClick={() => openDeleteDialog(court)}
                             className="text-red-600 focus:text-red-700 border-t border-slate-100 mt-1 pt-1"
@@ -337,22 +433,33 @@ export default function CourtsList({
           <DialogHeader>
             <DialogTitle>Update Court Status</DialogTitle>
             <DialogDescription>
-              Change the status of <span className="font-semibold">{selectedCourt?.name}</span> to{' '}
+              Change the status of{" "}
+              <span className="font-semibold">{selectedCourt?.name}</span> to{" "}
               <span className="font-semibold capitalize">
-                {newStatus === 'active' ? 'Active' : newStatus === 'under_maintenance' ? 'Under Maintenance' : 'Closed'}
+                {newStatus === "active"
+                  ? "Active"
+                  : newStatus === "under_maintenance"
+                    ? "Under Maintenance"
+                    : "Closed"}
               </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => setStatusDialogOpen(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={handleStatusChange}
               disabled={loading}
             >
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
               Update Status
             </Button>
           </DialogFooter>
@@ -365,20 +472,23 @@ export default function CourtsList({
           <DialogHeader>
             <DialogTitle>Delete Court</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <span className="font-semibold">{selectedCourt?.name}</span>?
-              This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{selectedCourt?.name}</span>? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={loading}>
-              Cancel
-            </Button>
-            <Button 
-              variant="danger" 
-              onClick={handleDelete}
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
               disabled={loading}
             >
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleDelete} disabled={loading}>
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
               Delete Court
             </Button>
           </DialogFooter>

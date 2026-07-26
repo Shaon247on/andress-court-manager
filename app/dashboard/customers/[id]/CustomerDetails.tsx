@@ -112,7 +112,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
 
   const handleAddBenefit = async () => {
     setAddingBenefit(true);
-    const res = await addBenefitAction(customer.id, {
+    const res = await addBenefitAction(customer.user_id, {
       benefit_type: benefitType,
       value: benefitValue,
       apply_on: applyOn,
@@ -133,7 +133,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
   const handleRemoveBenefit = async () => {
     if (!selectedBenefit) return;
     setRemovingBenefit(true);
-    const res = await removeBenefitAction(customer.id, selectedBenefit.id);
+    const res = await removeBenefitAction(customer.user_id, selectedBenefit.id);
     
     if (res.success) {
       toast.success(res.data.message);
@@ -193,12 +193,12 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
             )}
             {customer.is_blocked ? 'Unblock' : 'Block'}
           </Button>
-          <Link href={`/dashboard/customers/${customer.id}/edit`}>
+          {/* <Link href={`/dashboard/customers/${customer.id}/edit`}>
             <Button variant="outline" size="sm">
               <Edit2 className="w-4 h-4 mr-2" />
               Edit
             </Button>
-          </Link>
+          </Link> */}
         </div>
       </div>
 
@@ -317,7 +317,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
                       <div className="flex items-center gap-2">
                         <BenefitTypeBadge type={benefit.benefit_type} />
                         <span className="text-sm font-bold text-slate-900">
-                          {benefit.benefit_type === 'percentage' ? `${benefit.value}%` : `$${benefit.value}`}
+                          {benefit.benefit_type === 'percentage' ? `${benefit.value}%` : `€${benefit.value}`}
                         </span>
                       </div>
                       <div className="space-y-1">
@@ -395,7 +395,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="value">Value ({benefitType === 'percentage' ? '%' : '$'})</Label>
+              <Label htmlFor="value">Value ({benefitType === 'percentage' ? '%' : '€'})</Label>
               <Input
                 id="value"
                 type="number"
@@ -476,7 +476,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
               <p className="text-sm font-medium">
                 {selectedBenefit.benefit_type === 'percentage' 
                   ? `${selectedBenefit.value}%` 
-                  : `$${selectedBenefit.value}`}
+                  : `€${selectedBenefit.value}`}
               </p>
               <p className="text-xs text-slate-500 mt-1">
                 Apply on: {getApplyOnLabel(selectedBenefit.apply_on)}

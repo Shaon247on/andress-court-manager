@@ -1,8 +1,6 @@
-// app/dashboard/settings/SettingsOverview.tsx
-
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,15 +15,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { updateProfileAction } from "@/actions/settings.action";
-import type { Profile, Schedule } from "@/types/Settings.type";
+import { ClubInfo } from "./ClubInfo";
+import type { Profile, Schedule, VenueImage } from "@/types/Settings.type";
 import { toast } from "sonner";
 import Image from "next/image";
 
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  role_label: string;
+  role_name: string;
+  status: "active" | "inactive" | "pending" | "suspended";
+  is_staff_member: boolean;
+}
 interface SettingsOverviewProps {
   profile: Profile | null;
   schedule: Schedule | null;
   errorMessage?: string;
   scheduleError?: string;
+  user?: User;
+  // ── Venue settings props ──
+  venueClubName?: string;
+  venueStreetAddress?: string;
+  venueCity?: string;
+  venueLatitude?: number;
+  venueLongitude?: number;
+  venueImages?: VenueImage[];
 }
 
 export default function SettingsOverview({
@@ -33,27 +50,28 @@ export default function SettingsOverview({
   schedule,
   errorMessage,
   scheduleError,
+  user,
+  venueClubName = "",
+  venueStreetAddress = "",
+  venueCity = "",
+  venueLatitude = 40.7128,
+  venueLongitude = -74.006,
+  venueImages = [],
 }: SettingsOverviewProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+
+  // Initialize state with profile data directly
+  const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || "");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     profile?.photo_url || null,
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Profile form state
-  const [fullName, setFullName] = useState(profile?.full_name || "");
-  const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || "");
-
-  // Update form when profile data loads
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || "");
-      setPhoneNumber(profile.phone_number || "");
-      setAvatarPreview(profile.photo_url || null);
-    }
-  }, [profile]);
+  // Check if user is an Owner - from session user data
+  const isOwner = user?.role_label === "Owner";
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,8 +94,7 @@ export default function SettingsOverview({
     }
   };
 
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProfileUpdate = async () => {
     setLoading(true);
 
     const formData = new FormData();
@@ -87,14 +104,24 @@ export default function SettingsOverview({
 
     const res = await updateProfileAction(formData);
 
-    console.log(res)
     if (res.success) {
       toast.success(res.data.message);
+      // Update local state with the new data
+      if (res.data.profile) {
+        setAvatarPreview(res.data.profile.photo_url || null);
+      }
+      // Refresh the page to update all data
       router.refresh();
     } else {
       toast.error(res.message);
     }
     setLoading(false);
+  };
+
+  // ── Handle venue update success ──
+  const handleVenueUpdate = () => {
+    // Just refresh the page to show updated data
+    router.refresh();
   };
 
   const getInitials = () => {
@@ -128,12 +155,14 @@ export default function SettingsOverview({
         <p className="text-slate-500 mt-1">
           Manage your account settings and preferences
         </p>
+        {user?.role_label && (
+          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            {user.role_label}
+          </div>
+        )}
       </div>
 
-      <form
-        onSubmit={handleProfileUpdate}
-        className="max-w-4xl space-y-8 pb-10 w-full"
-      >
+      <div className="max-w-4xl space-y-8 pb-10 w-full mx-auto">
         {/* Profile Information */}
         <div className="border border-slate-200 rounded-2xl p-4 sm:p-6 lg:p-8 bg-white shadow-sm">
           <div className="flex items-center mb-6">
@@ -237,8 +266,9 @@ export default function SettingsOverview({
           </div>
           <div className="flex justify-end pt-4">
             <Button
-              type="submit"
+              type="button"
               variant="primary"
+              onClick={handleProfileUpdate}
               disabled={loading}
               className="w-full sm:w-auto"
             >
@@ -254,56 +284,71 @@ export default function SettingsOverview({
           </div>
         </div>
 
-        {/* Payment Methods */}
-        <div className="border border-slate-200 rounded-2xl p-4 sm:p-6 lg:p-8 bg-white shadow-sm">
-          <div className="flex items-center mb-6">
-            <CreditCard className="w-5 h-5 text-emerald-500 mr-3" />
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">
-              Payment Methods
-            </h2>
-          </div>
+        {/* ── Club Information Section (Only for Owners) ── */}
+        {isOwner && (
+          <ClubInfo
+            clubName={venueClubName}
+            streetAddress={venueStreetAddress}
+            city={venueCity}
+            latitude={venueLatitude}
+            longitude={venueLongitude}
+            images={venueImages}
+            onUpdate={handleVenueUpdate}
+          />
+        )}
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 border-b border-slate-100 gap-3">
-            <div>
-              <div className="text-sm font-medium text-slate-900">
-                Manage Payment Methods
-              </div>
-              <div className="text-xs text-slate-500">
-                View all cards, set default, or remove payment methods
-              </div>
+        {/* Payment Methods - Only show for Owners */}
+        {isOwner && (
+          <div className="border border-slate-200 rounded-2xl p-4 sm:p-6 lg:p-8 bg-white shadow-sm">
+            <div className="flex items-center mb-6">
+              <CreditCard className="w-5 h-5 text-emerald-500 mr-3" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                Payment Methods
+              </h2>
             </div>
-            <Link
-              href="/dashboard/settings/payment-methods"
-              className="w-full sm:w-auto"
-            >
-              <button className="px-5 py-2 text-sm font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors w-full sm:w-auto">
-                Manage
-              </button>
-            </Link>
-          </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 sm:pt-6 gap-3">
-            <div>
-              <div className="text-sm font-medium text-slate-900">
-                Add New Payment Method
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 border-b border-slate-100 gap-3">
+              <div>
+                <div className="text-sm font-medium text-slate-900">
+                  Manage Payment Methods
+                </div>
+                <div className="text-xs text-slate-500">
+                  View all cards, set default, or remove payment methods
+                </div>
               </div>
-              <div className="text-xs text-slate-500">
-                Add a bank account for withdrawals
-              </div>
-            </div>
-            <Link
-              href="/dashboard/settings/payment-methods"
-              className="w-full sm:w-auto"
-            >
-              <Button
-                variant="primary"
-                className="h-10 px-5 rounded-lg text-sm font-semibold w-full sm:w-auto"
+              <Link
+                href="/dashboard/settings/payment-methods"
+                className="w-full sm:w-auto"
               >
-                Add Card
-              </Button>
-            </Link>
+                <button className="px-5 py-2 text-sm font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors w-full sm:w-auto">
+                  Manage
+                </button>
+              </Link>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 sm:pt-6 gap-3">
+              <div>
+                <div className="text-sm font-medium text-slate-900">
+                  Add New Payment Method
+                </div>
+                <div className="text-xs text-slate-500">
+                  Add a bank account for withdrawals
+                </div>
+              </div>
+              <Link
+                href="/dashboard/settings/payment-methods"
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  variant="primary"
+                  className="h-10 px-5 rounded-lg text-sm font-semibold w-full sm:w-auto"
+                >
+                  Add Card
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Security */}
         <div className="border border-slate-200 rounded-2xl p-4 sm:p-6 lg:p-8 bg-white shadow-sm">
@@ -314,28 +359,32 @@ export default function SettingsOverview({
             </h2>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-5 border border-slate-100 rounded-xl px-4 sm:px-6 mb-4 bg-white shadow-sm gap-3">
-            <div>
-              <div className="text-sm font-medium text-slate-900">
-                Schedule Maintenance
+          {/* Schedule Maintenance - Only show for Owners */}
+          {isOwner && (
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-5 border border-slate-100 rounded-xl px-4 sm:px-6 mb-4 bg-white shadow-sm gap-3">
+              <div>
+                <div className="text-sm font-medium text-slate-900">
+                  Schedule Maintenance
+                </div>
+                <div className="text-xs text-slate-500">
+                  {scheduleError
+                    ? "Unable to load schedule"
+                    : "Manage your weekly availability"}
+                </div>
               </div>
-              <div className="text-xs text-slate-500">
-                {scheduleError
-                  ? "Unable to load schedule"
-                  : "Manage your weekly availability"}
-              </div>
+              <Link
+                href="/dashboard/settings/schedule"
+                className="w-full sm:w-auto"
+              >
+                <button className="px-5 py-2 text-sm font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors w-full sm:w-auto">
+                  Change Schedule
+                </button>
+              </Link>
             </div>
-            <Link
-              href="/dashboard/settings/schedule"
-              className="w-full sm:w-auto"
-            >
-              <button className="px-5 py-2 text-sm font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors w-full sm:w-auto">
-                Change Schedule
-              </button>
-            </Link>
-          </div>
+          )}
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-5 border border-slate-100 rounded-xl px-4 sm:px-6 mb-4 bg-white shadow-sm gap-3">
+          {/* Password - Always shown */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-5 border border-slate-100 rounded-xl px-4 sm:px-6 bg-white shadow-sm gap-3">
             <div>
               <div className="text-sm font-medium text-slate-900">Password</div>
               <div className="text-xs text-slate-500">
@@ -352,7 +401,7 @@ export default function SettingsOverview({
             </Link>
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

@@ -40,7 +40,7 @@ export interface ParticipantInput {
   position_role?: string;
   is_game_owner: boolean;
   is_paid: boolean;
-  app_user_id: string;
+  user_id: string;
 }
 
 export interface CreateBookingPayload {
@@ -53,6 +53,7 @@ export interface CreateBookingPayload {
   game_format: string;
   repeat_type: 'none' | 'weekly' | 'monthly';
   visibility: 'private' | 'public';
+  is_competitive: boolean; // Add this
   participants: ParticipantInput[];
 }
 
@@ -87,7 +88,7 @@ export interface Participant {
   is_game_owner: boolean;
   amount_to_pay: string;
   is_paid: boolean;
-  app_user_id: string;
+  user_id: string;
 }
 
 export interface BookingDetail {
@@ -147,6 +148,7 @@ export interface UpdateBookingPayload {
   game_format: string;
   repeat_type: 'none' | 'weekly' | 'monthly';
   visibility: 'private' | 'public';
+  is_competitive: boolean; 
   participants: ParticipantInput[];
 }
 

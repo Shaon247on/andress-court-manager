@@ -36,6 +36,8 @@ export async function getScheduleAction(date: string): Promise<
     const response = await api.get("/manager/bookings/schedule/", { 
       params: { date: formattedDate } 
     });
+
+    console.log("the schedule data response:",response.data.schedule.courts.bookings  )
     const result = handleActionResponse(response.data);
     
     if (!result.success) {
@@ -116,29 +118,43 @@ export async function updateBookingAction(
 > {
   if (!bookingId) return { success: false, message: "Booking ID is required" };
 
+  // ── Only validate fields that are present ──
   const parsed = updateBookingSchema.safeParse(raw);
   if (!parsed.success) {
+    console.error('❌ Validation error:', parsed.error.issues);
     return { 
       success: false, 
       message: parsed.error.issues[0]?.message ?? "Invalid input" 
     };
   }
 
-  const body: UpdateBookingPayload = parsed.data;
 
+  
+  
+  const body: UpdateBookingPayload = parsed.data;
+  
+  console.log("the payload:",body)
   try {
     const api = await getServerApi();
     const response = await api.patch(`/manager/bookings/${bookingId}/update/`, body);
+
+    console.log("the response:", response.data)
     const result = handleActionResponse(response.data);
     
+    // ── Check if the API returned an error ──
     if (!result.success) {
-      return { success: false, message: result.message ?? "Failed to update booking" };
+      // ── Extract the error message from the API response ──
+      const errorMessage = result.message || response.data?.message || 'Failed to update booking';
+      console.error('❌ API Error:', errorMessage);
+      return { success: false, message: errorMessage };
     }
     
     return { success: true, data: result.data as UpdateBookingResponse };
-  } catch (error) {
-    const err = handleApiError(error);
-    return { success: false, message: err.message };
+  } catch (error: any) {
+    // ── Handle Axios errors ──
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update booking';
+    console.error('❌ Update error:', errorMessage);
+    return { success: false, message: errorMessage };
   }
 }
 

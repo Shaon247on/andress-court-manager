@@ -1,5 +1,3 @@
-// app/dashboard/manager-team/ManagerTeamList.tsx
-
 "use client";
 
 import React, { useState } from 'react';
@@ -25,7 +23,6 @@ import { AddStaffModal, EditStaffModal } from './StaffModals';
 import { deleteStaffAction } from '@/actions/manager-team.action';
 import type { TeamStaff, TeamCards, TeamRole } from '@/types/ManagerTeam.type';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 interface ManagerTeamListProps {
   staff: TeamStaff[];

@@ -101,7 +101,7 @@ export async function createCourtAction(raw: FormData): Promise<
   try {
     // Extract and validate text fields
     const name = raw.get("name") as string;
-    const description = raw.get("description") as string | undefined;
+    // const description = raw.get("description") as string | undefined;
     const court_type = raw.get("court_type") as 'indoor' | 'outdoor' | 'both';
     const game_formats = JSON.parse(raw.get("game_formats") as string || '[]');
     const price_per_hour = raw.get("price_per_hour") as string;
@@ -109,7 +109,7 @@ export async function createCourtAction(raw: FormData): Promise<
     // Validate the data
     const validationResult = createCourtSchema.safeParse({
       name,
-      description,
+      // description,
       court_type,
       game_formats,
       price_per_hour,
@@ -125,7 +125,6 @@ export async function createCourtAction(raw: FormData): Promise<
     // Create FormData for the API
     const formData = new FormData();
     formData.append("name", name);
-    if (description) formData.append("description", description);
     formData.append("court_type", court_type);
     formData.append("game_formats", JSON.stringify(game_formats));
     formData.append("price_per_hour", price_per_hour);

@@ -5,7 +5,7 @@ export interface TeamPermissions {
   tournaments: boolean;
   revenue: boolean;
   support: boolean;
-  court_management: boolean;
+  courts: boolean;
 }
 
 export interface TeamStaff {
