@@ -25,6 +25,14 @@ export async function middleware(request: NextRequest) {
   
   const isAuthenticated = !!session?.id && !!accessToken;
   
+  // ── Logging for debugging ──
+  if (isAuthenticated) {
+    console.log('🔐 User authenticated:', session?.email);
+    console.log('📋 Permissions:', permissions);
+  } else {
+    console.log('🔓 User not authenticated');
+  }
+  
   // Public routes
   const publicRoutes = ['/', '/forgot-password', '/verify-otp', '/reset-password', '/register'];
   const isPublicRoute = publicRoutes.some(route => 
@@ -34,23 +42,26 @@ export async function middleware(request: NextRequest) {
   // Protected routes
   const isProtectedRoute = path.startsWith('/dashboard') || path.startsWith('/settings');
   
-  // CASE 1: Not authenticated on protected route → redirect to login
+  // ── CASE 1: Not authenticated on protected route → redirect to login ──
   if (isProtectedRoute && !isAuthenticated) {
+    console.log(`🚫 Unauthenticated access to ${path}, redirecting to login`);
     const loginUrl = new URL('/', request.url);
     loginUrl.searchParams.set('redirect', path);
     return NextResponse.redirect(loginUrl);
   }
   
-  // CASE 2: Authenticated on public route → redirect to first available dashboard route
+  // ── CASE 2: Authenticated on public route → redirect to first available dashboard route ──
   if (isPublicRoute && isAuthenticated && path !== '/register') {
     const redirectTo = getFirstAvailableRoute(permissions);
+    console.log(`➡️ Authenticated user on public route, redirecting to ${redirectTo}`);
     return NextResponse.redirect(new URL(redirectTo, request.url));
   }
   
-  // CASE 3: Authenticated on protected route → check permissions
+  // ── CASE 3: Authenticated on protected route → check permissions ──
   if (isProtectedRoute && isAuthenticated) {
     // Settings is always accessible
     if (path.startsWith('/dashboard/settings')) {
+      console.log('⚙️ Settings route - always accessible');
       return NextResponse.next();
     }
     
@@ -60,9 +71,11 @@ export async function middleware(request: NextRequest) {
     if (!hasAccess) {
       console.log(`🚫 User doesn't have permission for ${path}, redirecting to first available route`);
       const redirectTo = getFirstAvailableRoute(permissions);
+      console.log(`➡️ Redirecting to: ${redirectTo}`);
       
       // If no permissions at all, redirect to login
       if (redirectTo === '/') {
+        console.log('❌ No permissions found, clearing session and redirecting to login');
         const { clearAuthCookies } = await import('@/lib/cookies');
         await clearAuthCookies();
         return NextResponse.redirect(new URL('/', request.url));
@@ -72,9 +85,9 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // CASE 4: No permissions but authenticated → clear session and redirect to login
+  // ── CASE 4: No permissions but authenticated → clear session and redirect to login ──
   if (isAuthenticated && !permissions && isProtectedRoute) {
-    console.log('⚠️ No permissions found, clearing session');
+    console.log('⚠️ No permissions found for authenticated user, clearing session');
     const { clearAuthCookies } = await import('@/lib/cookies');
     await clearAuthCookies();
     return NextResponse.redirect(new URL('/', request.url));

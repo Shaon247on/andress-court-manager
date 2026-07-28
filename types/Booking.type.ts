@@ -20,6 +20,9 @@ export interface BookingListItem {
   booking_type: 'regular' | 'lesson' | 'event';
   kind: 'booking' | 'lesson';
   status: 'confirmed' | 'cancelled' | 'pending' | 'completed';
+  platform_commission: string | null;
+  transaction_fee: string | null;
+  net_earnings: string | null;
 }
 
 export interface BookingsTabResponse {
@@ -95,9 +98,12 @@ export interface BookingDetail {
   visibility: string;
   participants: BookingParticipant[];
   created_at: string;
+  platform_commission: string | null;
+  transaction_fee: string | null;
+  net_earnings: string | null;
   court: {
     name: string;
-    facility: string;
+    club_name?: string;
   };
   location: string;
   time: string;

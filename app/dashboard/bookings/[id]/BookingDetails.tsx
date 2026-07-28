@@ -1,5 +1,3 @@
-// app/dashboard/bookings/[id]/BookingDetails.tsx
-
 "use client";
 
 import React from 'react';
@@ -21,7 +19,9 @@ import {
   Crown,
   Wallet,
   XCircle,
-  Euro
+  Euro,
+  TrendingUp,
+  Receipt,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -92,6 +92,15 @@ const PositionBadge = ({ position }: { position?: string }) => {
   );
 };
 
+const AmountDisplay = ({ amount, className }: { amount: string; className?: string }) => {
+  const numAmount = parseFloat(amount);
+  return (
+    <span className={cn("font-bold", className)}>
+      €{numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+    </span>
+  );
+};
+
 const formatDate = (dateString: string) => {
   try {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -118,11 +127,14 @@ export default function BookingDetails({ booking }: BookingDetailsProps) {
   const teamAFilled = booking.team_a?.filled || 0;
   const teamBFilled = booking.team_b?.filled || 0;
 
+  // Check if we have platform fee data
+  const hasPlatformData = booking.platform_commission || booking.transaction_fee || booking.net_earnings;
+
   const renderPlayerSlot = (participant: BookingParticipant, teamName: string) => {
     const customerId = participant.user_id || '';
     const isClickable = !!customerId;
     const hasPhoto = participant.photo_url && participant.photo_url !== '';
-console.log("the  photo url:",teamAPlayers)
+
     const PlayerCard = () => (
       <div 
         className={cn(
@@ -175,7 +187,7 @@ console.log("the  photo url:",teamAPlayers)
             <PositionBadge position={participant.position_role} />
             {participant.amount_to_pay && (
               <span className="inline-flex items-center text-xs font-medium text-slate-500">
-                €{parseFloat(participant.amount_to_pay).toFixed(2)}
+                <AmountDisplay amount={participant.amount_to_pay} />
               </span>
             )}
           </div>
@@ -183,7 +195,7 @@ console.log("the  photo url:",teamAPlayers)
         <div className="text-right shrink-0">
           <div className="flex flex-col items-end gap-1">
             <span className="text-xs sm:text-sm font-bold text-slate-900">
-              €{parseFloat(participant.amount_to_pay || '0').toFixed(2)}
+              <AmountDisplay amount={participant.amount_to_pay || '0'} />
             </span>
             <PaymentStatusBadge isPaid={participant.is_paid || false} />
           </div>
@@ -256,8 +268,8 @@ console.log("the  photo url:",teamAPlayers)
         </div>
       </div>
 
-      {/* Booking Info Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 shrink-0">
+      {/* Booking Info Cards - Now with 5 cards including platform fees */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6 shrink-0">
         <Card className="border border-slate-200 shadow-none">
           <CardContent className="p-3 sm:p-4 flex items-center gap-3">
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
@@ -269,6 +281,7 @@ console.log("the  photo url:",teamAPlayers)
             </div>
           </CardContent>
         </Card>
+        
         <Card className="border border-slate-200 shadow-none">
           <CardContent className="p-3 sm:p-4 flex items-center gap-3">
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
@@ -280,6 +293,7 @@ console.log("the  photo url:",teamAPlayers)
             </div>
           </CardContent>
         </Card>
+        
         <Card className="border border-slate-200 shadow-none">
           <CardContent className="p-3 sm:p-4 flex items-center gap-3">
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 shrink-0">
@@ -287,10 +301,13 @@ console.log("the  photo url:",teamAPlayers)
             </div>
             <div>
               <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Price</p>
-              <p className="text-xs sm:text-sm font-semibold text-slate-900">€{parseFloat(booking.price).toFixed(2)}</p>
+              <p className="text-xs sm:text-sm font-semibold text-slate-900">
+                <AmountDisplay amount={booking.price} />
+              </p>
             </div>
           </CardContent>
         </Card>
+        
         <Card className="border border-slate-200 shadow-none">
           <CardContent className="p-3 sm:p-4 flex items-center gap-3">
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
@@ -299,6 +316,36 @@ console.log("the  photo url:",teamAPlayers)
             <div>
               <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Format</p>
               <p className="text-xs sm:text-sm font-semibold text-slate-900">{booking.game_format}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Platform Fees Card */}
+        <Card className={cn(
+          "border shadow-none",
+          hasPlatformData ? "border-amber-200 bg-gradient-to-br from-amber-50 to-white" : "border-slate-200"
+        )}>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Platform Fees</p>
+              {hasPlatformData ? (
+                <div className="space-y-0.5">
+                  <p className="text-xs font-medium text-amber-600 truncate">
+                    -<AmountDisplay amount={booking.platform_commission || '0'} /> commission
+                  </p>
+                  <p className="text-xs font-medium text-purple-600 truncate">
+                    -<AmountDisplay amount={booking.transaction_fee || '0'} /> fee
+                  </p>
+                  <p className="text-xs font-bold text-emerald-600 truncate">
+                    <AmountDisplay amount={booking.net_earnings || '0'} /> net
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400">No fees applied</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -319,11 +366,15 @@ console.log("the  photo url:",teamAPlayers)
             </div>
             <div>
               <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Total Amount</p>
-              <p className="text-xs sm:text-sm font-bold text-slate-900">€{parseFloat(booking.total_amount).toFixed(2)}</p>
+              <p className="text-xs sm:text-sm font-bold text-slate-900">
+                <AmountDisplay amount={booking.total_amount} />
+              </p>
             </div>
             <div>
               <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Per Player</p>
-              <p className="text-xs sm:text-sm font-bold text-slate-900">€{parseFloat(booking.per_player).toFixed(2)}</p>
+              <p className="text-xs sm:text-sm font-bold text-slate-900">
+                <AmountDisplay amount={booking.per_player} />
+              </p>
             </div>
             <div>
               <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Booking Type</p>
@@ -333,7 +384,54 @@ console.log("the  photo url:",teamAPlayers)
         </CardContent>
       </Card>
 
-      {/* Teams Lineup - Using participants array */}
+      {/* Platform Fees Detailed Card - Optional, shows more details if needed */}
+      {hasPlatformData && (
+        <Card className="border border-slate-200 shadow-none mb-4 sm:mb-6 shrink-0 bg-gradient-to-r from-slate-50 to-white">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Receipt className="w-4 h-4 text-slate-600" />
+              <h3 className="text-sm font-semibold text-slate-900">Platform Fees Breakdown</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-amber-600 font-medium">Platform Commission</p>
+                  <p className="text-sm font-bold text-amber-700">
+                    -<AmountDisplay amount={booking.platform_commission || '0'} />
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Receipt className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-purple-600 font-medium">Transaction Fee</p>
+                  <p className="text-sm font-bold text-purple-700">
+                    -<AmountDisplay amount={booking.transaction_fee || '0'} />
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-600 font-medium">Net Earnings</p>
+                  <p className="text-sm font-bold text-emerald-700">
+                    <AmountDisplay amount={booking.net_earnings || '0'} />
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Teams Lineup */}
       <div className="flex-1 min-h-0">
         <h3 className="text-sm font-semibold text-slate-900 mb-3 sm:mb-4 shrink-0">Teams Lineup</h3>
         

@@ -109,7 +109,6 @@ const GameFormatBadge = ({ format }: { format: string }) => {
 const StatusOptions = [
   { label: "Active", value: "active" },
   { label: "Under Maintenance", value: "under_maintenance" },
-  { label: "Closed", value: "closed" },
 ];
 
 const CourtTypeOptions = [

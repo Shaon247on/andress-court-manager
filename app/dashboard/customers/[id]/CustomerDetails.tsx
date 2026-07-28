@@ -111,6 +111,12 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
   };
 
   const handleAddBenefit = async () => {
+    // Check if user already has benefits
+    if (benefits.length > 0) {
+      toast.error("User already has a benefit. Only one benefit is allowed per customer.");
+      return;
+    }
+
     setAddingBenefit(true);
     const res = await addBenefitAction(customer.user_id, {
       benefit_type: benefitType,
@@ -193,12 +199,6 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
             )}
             {customer.is_blocked ? 'Unblock' : 'Block'}
           </Button>
-          {/* <Link href={`/dashboard/customers/${customer.id}/edit`}>
-            <Button variant="outline" size="sm">
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          </Link> */}
         </div>
       </div>
 
@@ -295,11 +295,22 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
             variant="primary" 
             size="sm"
             onClick={() => setIsAddBenefitOpen(true)}
+            disabled={benefits.length > 0} // Disable button if user already has a benefit
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Benefit
           </Button>
         </div>
+
+        {/* Show message if user already has a benefit */}
+        {benefits.length > 0 && (
+          <div className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
+            <p className="flex items-center gap-2">
+              <Gift className="w-4 h-4" />
+              This customer already has a benefit. Only one benefit is allowed per customer.
+            </p>
+          </div>
+        )}
 
         {benefits.length === 0 ? (
           <Card>
@@ -361,6 +372,15 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
               Add a new benefit for {customer.full_name}
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Show warning if user already has a benefit */}
+          {benefits.length > 0 && (
+            <div className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800">
+              <p className="font-medium">Warning: Customer already has a benefit</p>
+              <p className="mt-1">Only one benefit is allowed per customer. Please remove the existing benefit first.</p>
+            </div>
+          )}
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Benefit Type</Label>
@@ -368,11 +388,13 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
                 <button
                   type="button"
                   onClick={() => setBenefitType('percentage')}
+                  disabled={benefits.length > 0}
                   className={cn(
                     "px-4 py-2 rounded-lg border text-sm font-medium transition-colors",
                     benefitType === 'percentage' 
                       ? "border-primary bg-primary/10 text-primary" 
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-slate-200 hover:border-slate-300",
+                    benefits.length > 0 && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <Percent className="w-4 h-4 inline mr-2" />
@@ -381,11 +403,13 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
                 <button
                   type="button"
                   onClick={() => setBenefitType('fixed')}
+                  disabled={benefits.length > 0}
                   className={cn(
                     "px-4 py-2 rounded-lg border text-sm font-medium transition-colors",
                     benefitType === 'fixed' 
                       ? "border-primary bg-primary/10 text-primary" 
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-slate-200 hover:border-slate-300",
+                    benefits.length > 0 && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <DollarSign className="w-4 h-4 inline mr-2" />
@@ -402,12 +426,17 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
                 value={benefitValue}
                 onChange={(e) => setBenefitValue(e.target.value)}
                 placeholder={benefitType === 'percentage' ? '10' : '5.00'}
+                disabled={benefits.length > 0}
               />
             </div>
 
             <div className="space-y-2">
               <Label>Apply On</Label>
-              <Select value={applyOn} onValueChange={(val) => setApplyOn(val as 'split' | 'full' | 'all')}>
+              <Select 
+                value={applyOn} 
+                onValueChange={(val) => setApplyOn(val as 'split' | 'full' | 'all')}
+                disabled={benefits.length > 0}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select where to apply" />
                 </SelectTrigger>
@@ -428,6 +457,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
                   value={usagePerDay}
                   onChange={(e) => setUsagePerDay(parseInt(e.target.value) || 0)}
                   min={0}
+                  disabled={benefits.length > 0}
                 />
               </div>
               <div className="space-y-2">
@@ -438,6 +468,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
                   value={usagePerMonth}
                   onChange={(e) => setUsagePerMonth(parseInt(e.target.value) || 0)}
                   min={0}
+                  disabled={benefits.length > 0}
                 />
               </div>
             </div>
@@ -449,7 +480,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
             <Button 
               variant="primary" 
               onClick={handleAddBenefit}
-              disabled={addingBenefit}
+              disabled={addingBenefit || benefits.length > 0}
             >
               {addingBenefit ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -460,7 +491,7 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
         </DialogContent>
       </Dialog>
 
-      {/* Remove Benefit Dialog - FIXED: Moved benefit details outside DialogDescription */}
+      {/* Remove Benefit Dialog */}
       <Dialog open={isRemoveBenefitOpen} onOpenChange={setIsRemoveBenefitOpen}>
         <DialogContent>
           <DialogHeader>
@@ -470,7 +501,6 @@ export default function CustomerDetails({ customer, benefits, errorMessage }: Cu
             </DialogDescription>
           </DialogHeader>
           
-          {/* Moved benefit details outside DialogDescription to avoid nesting issues */}
           {selectedBenefit && (
             <div className="mt-2 p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium">

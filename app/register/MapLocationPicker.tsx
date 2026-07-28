@@ -15,14 +15,12 @@ import { geocodeAddressAction, reverseGeocodeAction } from "@/actions/geocode.ac
 interface MapLocationPickerProps {
   latitude: number;
   longitude: number;
-  /** Combined "street, city, state zip, country" used for the initial geocode */
   addressQuery: string;
   onLocationChange: (lat: number, lng: number, formattedAddress?: string) => void;
 }
 
 const DEFAULT_CENTER = { lat: 40.7128, lng: -74.006 };
 
-// Lives inside <Map> so it can grab the map instance via useMap() and pan/zoom
 function MapController({ target }: { target: { lat: number; lng: number } | null }) {
   const map = useMap();
 
@@ -47,7 +45,8 @@ export function MapLocationPicker({
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasAutoGeocoded = useRef(false);
+  const hasSearched = useRef(false);
+  const previousAddress = useRef<string>("");
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAP_API;
 
@@ -66,7 +65,6 @@ export function MapLocationPicker({
         setResolvedAddress(result.formattedAddress);
         onLocationChange(lat, lng, result.formattedAddress);
       } else {
-        // Even if reverse geocoding fails, we still have the coordinates
         setResolvedAddress(null);
       }
     },
@@ -75,7 +73,7 @@ export function MapLocationPicker({
 
   const handleSearch = useCallback(async () => {
     if (!addressQuery.trim()) {
-      setError("Fill in the address fields first");
+      setError("Please fill in the address fields first");
       return;
     }
 
@@ -85,29 +83,39 @@ export function MapLocationPicker({
     setIsSearching(false);
 
     if (!result.success || result.latitude === undefined || result.longitude === undefined) {
-      setError(result.message || "Could not find that address");
+      setError(result.message || "Could not find this address. Please check the location details or drag the pin manually.");
       return;
     }
 
-    setResolvedAddress(result.formattedAddress ?? null);
+    const formattedAddress = result.formattedAddress || addressQuery;
+    setResolvedAddress(formattedAddress);
     setPanTarget({ lat: result.latitude, lng: result.longitude });
-    applyPosition(result.latitude, result.longitude, true);
-  }, [addressQuery, applyPosition]);
-
-  // Auto-geocode once on mount
-  useEffect(() => {
-    if (hasAutoGeocoded.current) return;
-    if (!addressQuery.trim()) return;
-    hasAutoGeocoded.current = true;
     
-    // Small delay to ensure everything is ready
+    // Set marker position and update parent
+    await applyPosition(result.latitude, result.longitude, true);
+    onLocationChange(result.latitude, result.longitude, formattedAddress);
+    
+    previousAddress.current = addressQuery;
+  }, [addressQuery, applyPosition, onLocationChange]);
+
+  // Auto-search when address changes
+  useEffect(() => {
+    // Check if address has changed and is not empty
+    if (!addressQuery.trim()) return;
+    if (addressQuery === previousAddress.current) return;
+    
+    // Debounce the search
     const timer = setTimeout(() => {
       handleSearch();
-    }, 500);
+    }, 1000);
     
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [addressQuery, handleSearch]);
+
+  // Initialize marker position from props
+  useEffect(() => {
+    setMarkerPos({ lat: latitude, lng: longitude });
+  }, [latitude, longitude]);
 
   const handleMapClick = useCallback(
     (event: MapMouseEvent) => {
@@ -155,7 +163,7 @@ export function MapLocationPicker({
           </span>
         ) : (
           <>
-            <MapPin className="mr-2 w-6 h-6" /> Search Location on Map
+            <MapPin className="mr-2 w-6 h-6" /> Update Location on Map
           </>
         )}
       </Button>
@@ -170,9 +178,7 @@ export function MapLocationPicker({
       <div className="w-full h-80 rounded-xl overflow-hidden border border-slate-200 mb-4">
         <APIProvider apiKey={apiKey}>
           <Map
-            defaultCenter={
-              latitude && longitude ? { lat: latitude, lng: longitude } : DEFAULT_CENTER
-            }
+            center={markerPos}
             defaultZoom={15}
             onClick={handleMapClick}
             gestureHandling="greedy"
@@ -186,11 +192,15 @@ export function MapLocationPicker({
       </div>
 
       <div className="p-4 border border-emerald-400 rounded-xl bg-white mb-2 flex items-start text-sm gap-2">
-        <span className="font-bold text-emerald-500 shrink-0">Pinned:</span>
+        <span className="font-bold text-emerald-500 shrink-0">📍 Pinned:</span>
         <span className="text-emerald-500 font-medium">
-          {isResolving
-            ? "Resolving address..."
-            : resolvedAddress ?? `${markerPos.lat.toFixed(6)}, ${markerPos.lng.toFixed(6)}`}
+          {isResolving ? (
+            "Resolving address..."
+          ) : resolvedAddress ? (
+            resolvedAddress
+          ) : (
+            `${markerPos.lat.toFixed(6)}, ${markerPos.lng.toFixed(6)}`
+          )}
         </span>
       </div>
       <p className="text-xs text-slate-400">

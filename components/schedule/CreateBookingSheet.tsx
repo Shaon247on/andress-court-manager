@@ -119,12 +119,23 @@ export function CreateBookingSheet({
     return parseFloat(currentCourt?.pricePerHour || "0");
   }, [currentCourt]);
 
+  // ── Calculate duration in hours ──
+  const durationInHours = useMemo(() => {
+    return Math.max(0, endTime - startTime);
+  }, [startTime, endTime]);
+
+  // ── Calculate total price (price per hour * duration) ──
+  const totalPrice = useMemo(() => {
+    return pricePerHour * durationInHours;
+  }, [pricePerHour, durationInHours]);
+
+  // ── Calculate split price per person ──
   const splitPricePerPerson = useCallback(() => {
     const formatNum = parseInt(gameFormat) || 5;
     const totalPlayers = formatNum * 2;
-    if (totalPlayers === 0) return pricePerHour.toFixed(2);
-    return (pricePerHour / totalPlayers).toFixed(2);
-  }, [pricePerHour, gameFormat]);
+    if (totalPlayers === 0) return totalPrice.toFixed(2);
+    return (totalPrice / totalPlayers).toFixed(2);
+  }, [totalPrice, gameFormat]);
 
   const formatSlotTime = (num: number) => hoursToTimeString(num);
 
@@ -140,9 +151,9 @@ export function CreateBookingSheet({
     (slot: PlayerSlot, team: "a" | "b") => {
       if (paymentType === "split") return splitPricePerPerson();
       const key = `${team}:${slot.id}`;
-      return payerId === key ? pricePerHour.toFixed(2) : "0.00";
+      return payerId === key ? totalPrice.toFixed(2) : "0.00";
     },
-    [paymentType, payerId, pricePerHour, splitPricePerPerson],
+    [paymentType, payerId, totalPrice, splitPricePerPerson],
   );
 
   const bookingTypeConfig = {
@@ -531,6 +542,9 @@ export function CreateBookingSheet({
               <p className="text-3xl font-black tracking-tight">
                 {formatSlotTime(startTime)} - {formatSlotTime(endTime)}
               </p>
+              <p className="text-sm font-medium text-white/80 mt-1">
+                Duration: {durationInHours} hour{durationInHours > 1 ? "s" : ""}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-sm font-medium text-white/80">Court</p>
@@ -619,29 +633,27 @@ export function CreateBookingSheet({
                 </Select>
               </div>
             )}
-            {!isEditMode && (
-              <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">
-                  {paymentType === "single"
-                    ? "Total price (paid by one player)"
-                    : "Price per person"}
-                </label>
-                <Input
-                  value={
-                    paymentType === "single"
-                      ? pricePerHour.toFixed(2)
-                      : splitPricePerPerson()
-                  }
-                  readOnly
-                  className="bg-slate-50"
-                />
-                <p className="text-xs text-slate-400 mt-1">
-                  {paymentType === "split"
-                    ? `Split among ${parseInt(gameFormat) * 2} players`
-                    : "One player pays the full amount"}
-                </p>
-              </div>
-            )}
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">
+                {paymentType === "single"
+                  ? "Total price (paid by one player)"
+                  : "Price per person"}
+              </label>
+              <Input
+                value={
+                  paymentType === "single"
+                    ? totalPrice.toFixed(2)
+                    : splitPricePerPerson()
+                }
+                readOnly
+                className="bg-slate-50"
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                {paymentType === "split"
+                  ? `Split among ${parseInt(gameFormat) * 2} players`
+                  : "One player pays the full amount"}
+              </p>
+            </div>
           </div>
 
           {/* Row 2: Match Type + Repeat + Visibility */}

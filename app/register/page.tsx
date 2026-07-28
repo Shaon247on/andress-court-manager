@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -33,6 +33,9 @@ import {
   timeStringSchema,
   type RegistrationField,
 } from "@/schemas/Registration.schema";
+
+// Import world-countries
+import worldCountries from "world-countries";
 
 const steps = [
   { id: 1, label: "Basic Info", icon: Building2 },
@@ -112,6 +115,7 @@ const InputWithIcon = ({
   </div>
 );
 
+// Updated CustomSelect with proper country list
 const CustomSelect = ({
   label,
   required,
@@ -121,6 +125,7 @@ const CustomSelect = ({
   options,
   placeholder,
   error,
+  ...props
 }: any) => (
   <div className="flex flex-col">
     <label className="text-sm text-slate-700 font-bold mb-2">
@@ -135,6 +140,7 @@ const CustomSelect = ({
           "w-full h-12 px-4 appearance-none rounded-lg border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-slate-700 font-medium cursor-pointer",
           error ? "border-red-400" : "border-slate-200"
         )}
+        {...props}
       >
         <option value="" disabled>
           {placeholder || "Please Select"}
@@ -164,6 +170,13 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Get all country names from world-countries
+  const countryOptions = useMemo(() => {
+    return worldCountries
+      .map(country => country.name.common)
+      .sort((a, b) => a.localeCompare(b));
+  }, []);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -182,7 +195,20 @@ export default function RegisterPage() {
     longitude: -74.006,
     schedule: defaultSchedule,
     cancellationHours: 24,
+    resolvedAddress: "",
   });
+
+  // Build the full address string for the map
+  const getFullAddress = useMemo(() => {
+    const parts = [
+      formData.street,
+      formData.city,
+      formData.state,
+      formData.zip,
+      formData.country
+    ].filter(Boolean);
+    return parts.join(", ");
+  }, [formData.street, formData.city, formData.state, formData.zip, formData.country]);
 
   const updateForm = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -196,8 +222,13 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, cancellationHours: hours }));
   };
 
-  const updateLocation = (lat: number, lng: number) => {
-    setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+  const updateLocation = (lat: number, lng: number, formattedAddress?: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      latitude: lat, 
+      longitude: lng,
+      resolvedAddress: formattedAddress || prev.resolvedAddress
+    }));
   };
 
   // ── Single-field, on-blur validation (Step 1 & 2) ──
@@ -315,6 +346,7 @@ export default function RegisterPage() {
         agreed_to_terms: agreed,
         schedule: formData.schedule,
         cancellation_hours: formData.cancellationHours,
+        resolved_address: formData.resolvedAddress,
       };
 
       const result = await registerCourtManagerAction(payload);
@@ -561,7 +593,7 @@ export default function RegisterPage() {
                 value={formData.country}
                 onChange={(e: any) => updateForm("country", e.target.value)}
                 onBlur={(e: any) => validateField("country", e.target.value)}
-                options={["United States", "United Kingdom", "Canada"]}
+                options={countryOptions}
                 placeholder="Please select Country"
                 error={errors.country}
               />
@@ -629,20 +661,40 @@ export default function RegisterPage() {
               click to fine-tune it
             </p>
 
+            {/* Show the address being searched */}
+            {getFullAddress && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <span className="font-bold">📍 Searching for:</span> {getFullAddress}
+                </p>
+              </div>
+            )}
+
             <MapLocationPicker
+              key={getFullAddress} // Force re-render when address changes
               latitude={formData.latitude}
               longitude={formData.longitude}
-              addressQuery={`${formData.street}, ${formData.city}, ${formData.state} ${formData.zip}, ${formData.country}`}
-              onLocationChange={(lat, lng) => updateLocation(lat, lng)}
+              addressQuery={getFullAddress}
+              onLocationChange={updateLocation}
             />
 
-            <div className="bg-[#fff9eb] border border-[#ffedc2] p-5 rounded-xl mb-12 flex items-center text-sm font-medium text-[#8a6100]">
+            {/* Display resolved address from map */}
+            {formData.resolvedAddress && (
+              <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <p className="text-sm text-emerald-800">
+                  <span className="font-bold">✅ Resolved Address:</span>{" "}
+                  {formData.resolvedAddress}
+                </p>
+              </div>
+            )}
+
+            <div className="bg-[#fff9eb] border border-[#ffedc2] p-5 rounded-xl mt-6 flex items-center text-sm font-medium text-[#8a6100]">
               <span className="font-bold mr-2 text-[#b07c00]">Note:</span> Make
               sure the pin is placed at your exact club location. This will be
               used for customer navigation and verification.
             </div>
 
-            <div className="flex justify-between items-center pt-6 border-t border-slate-100">
+            <div className="flex justify-between items-center pt-6 border-t border-slate-100 mt-6">
               <Button
                 variant="outline"
                 className="h-12 px-8 rounded-xl font-bold text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -748,9 +800,17 @@ export default function RegisterPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">GPS Location:</span>
                       <span className="font-bold text-slate-900 text-right">
-                        {formData.latitude}, {formData.longitude}
+                        {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
                       </span>
                     </div>
+                    {formData.resolvedAddress && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Resolved Address:</span>
+                        <span className="font-bold text-emerald-600 text-right text-balance pl-6 leading-relaxed">
+                          {formData.resolvedAddress}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <h4 className="font-bold text-slate-700 mb-4 mt-10 text-sm pb-2 border-b border-slate-200">

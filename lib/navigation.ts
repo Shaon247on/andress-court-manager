@@ -7,10 +7,21 @@ import {
   Users, 
   Briefcase, 
   Trophy, 
-  Headphones 
+  Headphones,
+  DollarSign,
+  UsersRound
 } from 'lucide-react';
 
-export type IconName = 'Calendar' | 'FileText' | 'LayoutDashboard' | 'Users' | 'Briefcase' | 'Trophy' | 'Headphones';
+export type IconName = 
+  | 'Calendar' 
+  | 'FileText' 
+  | 'LayoutDashboard' 
+  | 'Users' 
+  | 'Briefcase' 
+  | 'Trophy' 
+  | 'Headphones'
+  | 'DollarSign'
+  | 'UsersRound';
 
 export interface NavItem {
   iconName: IconName;
@@ -24,9 +35,9 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { iconName: 'FileText', label: "Bookings", href: "/dashboard/bookings", permission: "bookings" },
   { iconName: 'LayoutDashboard', label: "Court Management", href: "/dashboard/courts", permission: "courts" },
   { iconName: 'Users', label: "Customers", href: "/dashboard/customers", permission: "customers" },
-  { iconName: 'Briefcase', label: "Manager Staff", href: "/dashboard/staff", permission: "courts" },
+  { iconName: 'Briefcase', label: "Manager Staff", href: "/dashboard/staff", permission: "staff" },
   { iconName: 'Trophy', label: "Tournaments", href: "/dashboard/tournaments", permission: "tournaments" },
-  { iconName: 'Trophy', label: "Revenue", href: "/dashboard/revenue", permission: "revenue" },
+  { iconName: 'DollarSign', label: "Revenue", href: "/dashboard/revenue", permission: "revenue" },
   { iconName: 'Headphones', label: "Support", href: "/dashboard/support", permission: "support" },
 ];
 
@@ -38,6 +49,8 @@ export const ICON_MAP: Record<IconName, any> = {
   'Briefcase': Briefcase,
   'Trophy': Trophy,
   'Headphones': Headphones,
+  'DollarSign': DollarSign,
+  'UsersRound': UsersRound,
 };
 
 // Ordered by priority - highest priority first
@@ -46,6 +59,7 @@ const ROUTE_PRIORITY = [
   { route: '/dashboard/bookings', permission: 'bookings' },
   { route: '/dashboard/courts', permission: 'courts' },
   { route: '/dashboard/customers', permission: 'customers' },
+  { route: '/dashboard/staff', permission: 'staff' },
   { route: '/dashboard/tournaments', permission: 'tournaments' },
   { route: '/dashboard/revenue', permission: 'revenue' },
   { route: '/dashboard/support', permission: 'support' },
@@ -65,6 +79,7 @@ export function filterNavItemsByPermissions(
     return hasPermission;
   });
   
+  console.log('📋 Filtered nav items:', filtered.map(item => item.label));
   return filtered;
 }
 
@@ -76,16 +91,18 @@ export function getFirstAvailableRoute(
     return '/';
   }
   
+  console.log('🔍 Checking permissions for first available route:', permissions);
+  
   // Check permissions in priority order
   for (const item of ROUTE_PRIORITY) {
     if (permissions[item.permission] === true) {
-      console.log(`First available route: ${item.route} (permission: ${item.permission})`);
+      console.log(`✅ First available route: ${item.route} (permission: ${item.permission})`);
       return item.route;
     }
   }
   
   // No permissions found - redirect to login
-  console.log('No permissions found, redirecting to login');
+  console.log('❌ No permissions found, redirecting to login');
   return '/';
 }
 
@@ -127,5 +144,6 @@ export function isRouteAccessible(
     }
   }
   
+  console.log(`🚫 Route ${pathname} is not accessible with permissions:`, permissions);
   return false;
 }

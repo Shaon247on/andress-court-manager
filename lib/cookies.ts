@@ -71,18 +71,19 @@ export async function setAuthCookies(payload: {
     maxAge,
   });
 
-  // Permissions
-  if (payload.permissions) {
-    jar.set({
-      name: PERMISSIONS_NAME,
-      value: await encryptEdge(JSON.stringify(payload.permissions || {})),
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge,
-    });
-  }
+  // ── Store permissions with proper logging ──
+  const permissions = payload.permissions || {};
+  console.log('📦 Storing permissions:', permissions);
+  
+  jar.set({
+    name: PERMISSIONS_NAME,
+    value: await encryptEdge(JSON.stringify(permissions)),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge,
+  });
 }
 
 // ============================================================
@@ -134,17 +135,25 @@ export async function getRefreshToken(): Promise<string | null> {
 export async function getPermissions() {
   const jar = await cookies();
   const c = jar.get(PERMISSIONS_NAME)?.value;
-  if (!c) return null;
+  if (!c) {
+    console.log('🔑 No permissions cookie found');
+    return null;
+  }
   
   try {
     const dec = await decryptEdge(c);
-    return JSON.parse(dec || '{}');
+    if (!dec) {
+      console.log('🔑 Failed to decrypt permissions');
+      return null;
+    }
+    const permissions = JSON.parse(dec);
+    console.log('🔑 Retrieved permissions:', permissions);
+    return permissions;
   } catch (error) {
     console.error('Error decrypting permissions:', error);
     return null;
   }
 }
-
 export async function getUserId(): Promise<string | null> {
   const session = await getSession();
   return session?.id || null;

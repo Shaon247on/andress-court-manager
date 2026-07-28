@@ -13,6 +13,8 @@ import {
   Users,
   Clock,
   DollarSign,
+  TrendingUp,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +92,17 @@ const TypeFilterOptions = [
   { label: "Lessons", value: "lessons" },
   { label: "Events", value: "events" },
 ];
+
+// Amount display component
+const AmountDisplay = ({ amount, className }: { amount: string | null; className?: string }) => {
+  if (amount === null || amount === undefined) return <span className="text-slate-400">—</span>;
+  const numAmount = parseFloat(amount);
+  return (
+    <span className={cn("font-bold", className)}>
+      €{numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+    </span>
+  );
+};
 
 export default function BookingsList({
   bookings = [],
@@ -272,11 +285,18 @@ export default function BookingsList({
                   Time
                 </th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4">Players</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4">Amount</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
-                  Payment
+                  Commission
                 </th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 hidden lg:table-cell">
-                  Type
+                  Fee
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 hidden xl:table-cell">
+                  Net Earnings
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
+                  Payment
                 </th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4">Status</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-center">
@@ -288,7 +308,7 @@ export default function BookingsList({
               {bookings.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={10}
                     className="px-6 py-8 text-center text-slate-500"
                   >
                     No bookings found for this date.
@@ -314,23 +334,49 @@ export default function BookingsList({
                         {booking.player_count} player(s)
                       </div>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <div className="font-medium text-slate-900 text-sm">
-                        €{parseFloat(booking.amount).toFixed(2)}
+                        <AmountDisplay amount={booking.amount} />
                       </div>
-                      <PaymentTypeBadge type={booking.payment_type} />
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
+                      {booking.platform_commission ? (
+                        <span className="text-amber-600 font-medium">
+                          -<AmountDisplay amount={booking.platform_commission} />
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 hidden lg:table-cell">
-                      <BookingTypeBadge type={booking.booking_type} />
+                      {booking.transaction_fee ? (
+                        <span className="text-purple-600 font-medium">
+                          -<AmountDisplay amount={booking.transaction_fee} />
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden xl:table-cell">
+                      {booking.net_earnings ? (
+                        <span className="text-emerald-600 font-bold">
+                          <AmountDisplay amount={booking.net_earnings} />
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
+                      <PaymentTypeBadge type={booking.payment_type} />
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <StatusBadge status={booking.status} />
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                       <Link href={`/dashboard/bookings/${booking.id}`}>
-                        <Button variant={"primary"}>
+                        <Button variant={"primary"} size="sm">
                           <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">View</span>
+                          <span className="hidden sm:inline ml-1">View</span>
                         </Button>
                       </Link>
                     </td>

@@ -39,17 +39,23 @@ export async function courtManagerLoginAction(values: unknown) {
     }
 
     const data = apiResult.data;
-    const permissions = data.user?.permissions || {};
+    const user = data.user || {};
+    const permissions = user.permissions || {};
     
-    console.log('🔐 Login Response - Full User:', JSON.stringify(data.user, null, 2));
-    console.log('🔐 Login Response - Role Label:', data.user?.role_label);
-    console.log('🔐 Login Response - Role Name:', data.user?.role_name);
+    console.log('🔐 Login Response - Full User:', JSON.stringify(user, null, 2));
+    console.log('🔐 Login Response - Permissions:', JSON.stringify(permissions, null, 2));
+    console.log('🔐 Login Response - Role Label:', user.role_label);
+    console.log('🔐 Login Response - Role Name:', user.role_name);
+    
+    // Check if revenue and staff permissions exist
+    console.log('💰 Revenue permission:', permissions.revenue);
+    console.log('👥 Staff permission:', permissions.staff);
     
     // Store COMPLETE user data in cookies
     await setAuthCookies({ 
       access_token: data.access_token, 
       refresh_token: data.refresh_token, 
-      user: data.user, // Pass the complete user object
+      user: user,
       permissions: permissions
     });
     
@@ -60,7 +66,8 @@ export async function courtManagerLoginAction(values: unknown) {
     return { 
       success: true, 
       data: { 
-        user: data.user,
+        user: user,
+        permissions: permissions,
         redirectTo: redirectRoute
       } 
     };

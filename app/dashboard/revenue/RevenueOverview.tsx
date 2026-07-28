@@ -10,6 +10,9 @@ import {
   Clock,
   Wallet,
   Loader2,
+  Users,
+  CreditCard,
+  Receipt,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,7 @@ import { withdrawAction } from "@/actions/revenue.action";
 import type { RevenueResponse } from "@/types/Revenue.type";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface RevenueOverviewProps {
   data: RevenueResponse | null;
@@ -52,6 +56,16 @@ const StatusBadge = ({ status }: { status: string }) => {
       className={`inline-flex px-2.5 py-1 rounded text-[11px] font-bold ${className}`}
     >
       {label}
+    </span>
+  );
+};
+
+// Amount display component
+const AmountDisplay = ({ amount, className }: { amount: string; className?: string }) => {
+  const numAmount = parseFloat(amount);
+  return (
+    <span className={cn("font-bold", className)}>
+      €{numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
     </span>
   );
 };
@@ -84,6 +98,17 @@ export default function RevenueOverview({
       </div>
     );
   }
+
+  // Calculate platform expenses from earnings summary
+  const totalPlatformCommission = data.earnings_summary.reduce(
+    (sum, item) => sum + parseFloat(item.platform_commission || '0'), 
+    0
+  );
+  const totalTransactionFees = data.earnings_summary.reduce(
+    (sum, item) => sum + parseFloat(item.transaction_fee || '0'), 
+    0
+  );
+  const totalPlatformExpenses = totalPlatformCommission + totalTransactionFees;
 
   const handleWithdraw = async () => {
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
@@ -121,26 +146,29 @@ export default function RevenueOverview({
         <p className="text-slate-500">View earnings and manage withdrawals</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 shrink-0">
+      {/* Stats Cards - Now 5 cards in a row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8 shrink-0">
+        {/* Available Balance */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col items-start relative overflow-hidden">
           <div className="text-sm text-slate-500 font-medium mb-1">
             Available Balance
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-purple-600">
-            €{parseFloat(data.available_balance).toLocaleString()}
+            <AmountDisplay amount={data.net_earnings} />
           </div>
           <div className="text-xs text-slate-400 mt-1 font-medium">
             Ready to withdraw
           </div>
           <Download className="absolute top-4 right-4 w-5 h-5 text-purple-500" />
         </div>
+
+        {/* Total Earnings */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col items-start relative overflow-hidden">
           <div className="text-sm text-slate-500 font-medium mb-1">
             Total Earnings
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-slate-900">
-            €{parseFloat(data.total_earnings).toLocaleString()}
+            <AmountDisplay amount={data.total_earnings} />
           </div>
           <div className="text-xs text-slate-400 mt-1 font-medium">
             From {data.bookings_count} bookings
@@ -148,12 +176,13 @@ export default function RevenueOverview({
           <DollarSign className="absolute top-4 right-4 w-5 h-5 text-emerald-500" />
         </div>
 
+        {/* Total Withdrawn */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col items-start relative overflow-hidden">
           <div className="text-sm text-slate-500 font-medium mb-1">
             Total Withdrawn
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-teal-600">
-            €{parseFloat(data.total_withdrawn).toLocaleString()}
+            <AmountDisplay amount={data.total_withdrawn} />
           </div>
           <div className="text-xs text-slate-400 mt-1 font-medium">
             {data.withdrawal_requests.filter((w) => w.status === "paid").length}{" "}
@@ -162,17 +191,34 @@ export default function RevenueOverview({
           <Wallet className="absolute top-4 right-4 w-5 h-5 text-teal-500" />
         </div>
 
+        {/* Pending Amount */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col items-start relative overflow-hidden">
           <div className="text-sm text-slate-500 font-medium mb-1">
             Pending Amount
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-orange-500">
-            €{parseFloat(data.pending_amount).toLocaleString()}
+            <AmountDisplay amount={data.pending_amount} />
           </div>
           <div className="text-xs text-slate-400 mt-1 font-medium">
             {data.pending_count} pending
           </div>
           <Clock className="absolute top-4 right-4 w-5 h-5 text-orange-500" />
+        </div>
+
+        {/* NEW: Platform Expenses Card */}
+        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col items-start relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100/50">
+          <div className="text-sm text-slate-500 font-medium mb-1">
+            Platform Expenses
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-rose-600">
+            <AmountDisplay amount={totalPlatformExpenses.toFixed(2)} />
+          </div>
+          <div className="text-xs text-slate-400 mt-1 font-medium flex items-center gap-2">
+            <span>Commission: <AmountDisplay amount={totalPlatformCommission.toFixed(2)} className="text-amber-600" /></span>
+            <span className="text-slate-300">|</span>
+            <span>Fees: <AmountDisplay amount={totalTransactionFees.toFixed(2)} className="text-purple-600" /></span>
+          </div>
+          <Receipt className="absolute top-4 right-4 w-5 h-5 text-rose-500" />
         </div>
       </div>
 
@@ -196,8 +242,7 @@ export default function RevenueOverview({
               step="0.01"
             />
             <Button
-            variant={"blue"}
-              // className="h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shrink-0 w-full sm:w-auto"
+              variant={"blue"}
               onClick={() => setWithdrawDialogOpen(true)}
               disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
             >
@@ -210,8 +255,8 @@ export default function RevenueOverview({
         </div>
         <p className="text-sm text-slate-500 font-medium">
           Withdrawal requests are processed weekly on Mondays. Maximum
-          withdrawal amount: €
-          {parseFloat(data.available_balance).toLocaleString()}
+          withdrawal amount:{" "}
+          <AmountDisplay amount={data.available_balance} />
         </p>
       </div>
 
@@ -264,7 +309,7 @@ export default function RevenueOverview({
                       {row.code}
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 font-bold text-slate-900">
-                      €{parseFloat(row.amount).toLocaleString()}
+                      <AmountDisplay amount={row.amount} />
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4">
                       <StatusBadge status={row.status} />
@@ -324,7 +369,16 @@ export default function RevenueOverview({
                   Players
                 </TableHead>
                 <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-widest font-semibold">
-                  Amount
+                  Booking Amount
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-widest font-semibold">
+                  Commission
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-widest font-semibold">
+                  Fee
+                </TableHead>
+                <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-widest font-semibold">
+                  Net Earnings
                 </TableHead>
                 <TableHead className="px-4 sm:px-6 py-4 text-xs text-slate-500 uppercase tracking-widest font-semibold">
                   Status
@@ -335,14 +389,14 @@ export default function RevenueOverview({
               {data.earnings_summary.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={8}
                     className="px-6 py-8 text-center text-slate-500"
                   >
                     No earnings found.
                   </TableCell>
                 </TableRow>
               ) : (
-                data.earnings_summary.map((row, index) => (
+                data.earnings_summary.slice(0, 5).map((row, index) => (
                   <TableRow
                     key={index}
                     className="hover:bg-slate-50/50 transition-colors"
@@ -350,14 +404,23 @@ export default function RevenueOverview({
                     <TableCell className="px-4 sm:px-6 py-4 text-slate-600 font-medium">
                       {formatDate(row.date)}
                     </TableCell>
-                    <TableCell className="px-4 sm:px-6 py-4 text-slate-600">
-                      {row.booking_id}
+                    <TableCell className="px-4 sm:px-6 py-4 text-slate-600 font-mono text-sm">
+                      {row.booking_id || '—'}
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4 text-slate-600">
                       {row.players}
                     </TableCell>
-                    <TableCell className="px-4 sm:px-6 py-4 font-bold text-slate-900">
-                      €{parseFloat(row.amount).toLocaleString()}
+                    <TableCell className="px-4 sm:px-6 py-4">
+                      <AmountDisplay amount={row.booking_amount} />
+                    </TableCell>
+                    <TableCell className="px-4 sm:px-6 py-4 text-amber-600">
+                      -<AmountDisplay amount={row.platform_commission} />
+                    </TableCell>
+                    <TableCell className="px-4 sm:px-6 py-4 text-purple-600">
+                      -<AmountDisplay amount={row.transaction_fee} />
+                    </TableCell>
+                    <TableCell className="px-4 sm:px-6 py-4">
+                      <AmountDisplay amount={row.net_earnings || row.amount} className="text-emerald-600" />
                     </TableCell>
                     <TableCell className="px-4 sm:px-6 py-4">
                       <StatusBadge status={row.status} />

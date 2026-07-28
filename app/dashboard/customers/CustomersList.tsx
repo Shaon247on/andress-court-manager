@@ -121,6 +121,12 @@ export default function CustomersList({
   };
 
   const handleAddBenefit = (customer: Customer) => {
+    // Check if customer already has a benefit
+    if (customer.benefits > 0) {
+      toast.error("This customer already has a benefit. Only one benefit is allowed per customer.");
+      return;
+    }
+    
     setBenefitCustomer(customer);
     setAddBenefitOpen(true);
     // Reset form
@@ -274,7 +280,13 @@ export default function CustomersList({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleAddBenefit(customer)}
-                            className="flex items-center gap-2 cursor-pointer text-primary hover:text-primary"
+                            className={cn(
+                              "flex items-center gap-2 cursor-pointer",
+                              customer.benefits > 0 
+                                ? "text-slate-400 cursor-not-allowed opacity-50" 
+                                : "text-primary hover:text-primary"
+                            )}
+                            disabled={customer.benefits > 0}
                           >
                             <Plus className="h-4 w-4" />
                             <span>Add Benefit</span>
@@ -348,6 +360,15 @@ export default function CustomersList({
               Add a new benefit for {benefitCustomer?.full_name}
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Show warning if customer already has a benefit */}
+          {benefitCustomer && benefitCustomer.benefits > 0 && (
+            <div className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800">
+              <p className="font-medium">Warning: Customer already has a benefit</p>
+              <p className="mt-1">Only one benefit is allowed per customer. Please remove the existing benefit first.</p>
+            </div>
+          )}
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Benefit Type</Label>
@@ -355,11 +376,13 @@ export default function CustomersList({
                 <button
                   type="button"
                   onClick={() => setBenefitType('percentage')}
+                  disabled={benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false}
                   className={cn(
                     "px-4 py-2 rounded-lg border text-sm font-medium transition-colors flex-1",
                     benefitType === 'percentage' 
                       ? "border-primary bg-primary/10 text-primary" 
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-slate-200 hover:border-slate-300",
+                    benefitCustomer?.benefits && benefitCustomer.benefits > 0 && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <Percent className="w-4 h-4 inline mr-2" />
@@ -368,11 +391,13 @@ export default function CustomersList({
                 <button
                   type="button"
                   onClick={() => setBenefitType('fixed')}
+                  disabled={benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false}
                   className={cn(
                     "px-4 py-2 rounded-lg border text-sm font-medium transition-colors flex-1",
                     benefitType === 'fixed' 
                       ? "border-primary bg-primary/10 text-primary" 
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-slate-200 hover:border-slate-300",
+                    benefitCustomer?.benefits && benefitCustomer.benefits > 0 && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <DollarSign className="w-4 h-4 inline mr-2" />
@@ -391,12 +416,17 @@ export default function CustomersList({
                 placeholder={benefitType === 'percentage' ? '10' : '5.00'}
                 min="0"
                 step="0.01"
+                disabled={benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false}
               />
             </div>
 
             <div className="space-y-2">
               <Label>Apply On</Label>
-              <Select value={applyOn} onValueChange={(val) => setApplyOn(val as 'split' | 'full' | 'all')}>
+              <Select 
+                value={applyOn} 
+                onValueChange={(val) => setApplyOn(val as 'split' | 'full' | 'all')}
+                disabled={benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select where to apply" />
                 </SelectTrigger>
@@ -417,6 +447,7 @@ export default function CustomersList({
                   value={usagePerDay}
                   onChange={(e) => setUsagePerDay(parseInt(e.target.value) || 0)}
                   min={0}
+                  disabled={benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false}
                 />
               </div>
               <div className="space-y-2">
@@ -427,6 +458,7 @@ export default function CustomersList({
                   value={usagePerMonth}
                   onChange={(e) => setUsagePerMonth(parseInt(e.target.value) || 0)}
                   min={0}
+                  disabled={benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false}
                 />
               </div>
             </div>
@@ -438,7 +470,7 @@ export default function CustomersList({
             <Button 
               variant="primary" 
               onClick={confirmAddBenefit}
-              disabled={addingBenefit}
+              disabled={addingBenefit || (benefitCustomer?.benefits ? benefitCustomer.benefits > 0 : false)}
             >
               {addingBenefit ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

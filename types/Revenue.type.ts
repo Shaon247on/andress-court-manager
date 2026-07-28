@@ -1,4 +1,3 @@
-// ── Revenue Overview Types ──
 
 export interface RevenueStats {
   success: boolean;
@@ -23,7 +22,11 @@ export interface EarningItem {
   date: string;
   booking_id: string;
   players: string;
-  amount: string;
+  booking_amount: string;
+  platform_commission: string;
+  transaction_fee: string;
+  net_earnings: string;
+  amount: string; // Keeping for backward compatibility
   status: 'Paid' | 'Pending';
 }
 
@@ -34,6 +37,7 @@ export interface RevenueResponse {
   total_withdrawn: string;
   pending_amount: string;
   pending_count: number;
+  net_earnings: string;
   available_balance: string;
   withdrawal_requests: WithdrawalRequest[];
   earnings_summary: EarningItem[];
