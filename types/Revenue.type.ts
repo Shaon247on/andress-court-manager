@@ -16,6 +16,7 @@ export interface WithdrawalRequest {
   status: 'pending' | 'paid' | 'rejected';
   created_at: string;
   process_date: string | null;
+  reject_reason: string;
 }
 
 export interface EarningItem {
