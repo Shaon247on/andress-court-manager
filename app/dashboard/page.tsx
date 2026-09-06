@@ -21,7 +21,7 @@ export default async function ManagerDashboardPage({
   const res = await getScheduleAction(formattedDate);
   const schedule = res.success ? res.data : null;
   const errorMessage = !res.success ? res.message : undefined;
-  console.log("the  schedule:", res.data.schedule.courts.length);
+  console.log("the  schedule:", res?.data?.schedule.courts.length);
   return (
     <div className="h-full flex flex-col p-4 md:p-8">
       <div className="mb-6 flex flex-col space-y-1 shrink-0">

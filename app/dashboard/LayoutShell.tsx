@@ -70,39 +70,39 @@ export function LayoutShell({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      {/* Overlay for mobile */}
-      {isMobile && isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-      
-      <div 
-        className={`
-          fixed lg:relative z-50 h-screen transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${!isSidebarOpen && 'lg:w-[80px]'}
-        `}
-      >
-        <Sidebar 
-          isCollapsed={!isSidebarOpen} 
-          navItems={navItems}
-          user={user}
-        />
-      </div>
-      
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header 
-          onToggleSidebar={toggleSidebar} 
-          isSidebarOpen={isSidebarOpen}
-          user={user}
-        />
-        <main className="flex-1 overflow-hidden relative">
-          {children}
-        </main>
-      </div>
+  <div className="flex h-screen overflow-hidden bg-white">
+    {/* Overlay for mobile */}
+    {isMobile && isSidebarOpen && (
+      <div
+        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        onClick={() => setIsSidebarOpen(false)}
+      />
+    )}
+
+    <div
+      className={`
+        fixed lg:relative z-50 h-screen transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${!isSidebarOpen && 'lg:w-[80px]'}
+      `}
+    >
+      <Sidebar
+        isCollapsed={!isSidebarOpen}
+        navItems={navItems}
+        user={user}
+      />
     </div>
-  );
+
+    <div className="flex flex-col flex-1 min-w-0">
+      <Header
+        onToggleSidebar={toggleSidebar}
+        isSidebarOpen={isSidebarOpen}
+        user={user}
+      />
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
+    </div>
+  </div>
+);
 }
