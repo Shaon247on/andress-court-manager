@@ -2,6 +2,8 @@ import type { Tournament } from "./types";
 import type { Team } from "./types";
 import type { Group, Match } from "./types";
 import type { KnockoutMatch } from "./types";
+import type { Player } from "./types";
+import { getSlotsPerTeam } from "./rules";
 
 export const mockTournaments: Tournament[] = [
   {
@@ -112,6 +114,42 @@ export const mockTeamsByTournament: Record<string, Team[]> = {
   "t-004": generateTeams("t-004", 8),
   "t-005": generateTeams("t-005", 8),
 };
+
+const PLAYER_POSITIONS = ["GK", "DEF", "MID", "FWD"] as const;
+
+const playerNamePool = [
+  "Liam Carter", "Noah Bennett", "Ethan Brooks", "Mason Reed", "Lucas Hayes",
+  "Oliver Grant", "Elijah Ward", "James Foster", "Benjamin Cole", "Henry Pierce",
+  "Alexander Cruz", "Daniel Hart", "Matthew Reyes", "Jackson Blake", "Sebastian Fox",
+  "David Nolan", "Joseph Lane", "Samuel Reid", "Owen Marsh", "Wyatt Doyle",
+];
+
+// The searchable pool shown in the Add Player dialog.
+export const mockAvailablePlayers: Player[] = playerNamePool.map((name, i) => ({
+  id: `pool-player-${i + 1}`,
+  name,
+  position: PLAYER_POSITIONS[i % PLAYER_POSITIONS.length],
+}));
+
+function buildRoster(teamId: string, filledCount: number): Player[] {
+  return Array.from({ length: filledCount }, (_, i) => {
+    const source = mockAvailablePlayers[(teamId.length + i * 3) % mockAvailablePlayers.length];
+    return { id: `${teamId}-roster-${i + 1}`, name: source.name, position: source.position };
+  });
+}
+
+// Rosters, keyed by team id. Deliberately varies fill level per team (first
+// team of each tournament is left short 2 slots) so the UI shows full,
+// partial, and open-slot states out of the box.
+export const mockRosterByTeam: Record<string, Player[]> = {};
+mockTournaments.forEach((tournament) => {
+  const slots = getSlotsPerTeam(tournament.teamType);
+  const teams = mockTeamsByTournament[tournament.id] ?? [];
+  teams.forEach((team, idx) => {
+    const filled = idx === 0 ? Math.max(slots - 2, 0) : slots;
+    mockRosterByTeam[team.id] = buildRoster(team.id, Math.min(filled, slots));
+  });
+});
 
 
 function roundRobinMatches(groupId: string, teamIds: string[]): Match[] {

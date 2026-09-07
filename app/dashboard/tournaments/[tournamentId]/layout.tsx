@@ -23,16 +23,7 @@ export default function TournamentLayout({
 
   return (
     <div className="space-y-6 max-w-390 mx-auto pt-8">
-      {/* <Link
-        href="/dashboard/tournaments"
-        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Back to tournaments
-      </Link> */}
-
       <TournamentChrome tournament={tournament} teams={teams} />
-
       {children}
     </div>
   );

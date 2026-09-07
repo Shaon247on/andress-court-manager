@@ -26,7 +26,7 @@ export default function Bracket({ matches, teamsById }: BracketProps) {
   if (totalRounds === 1) {
     const finalMatch = roundsGrouped[0][0];
     return (
-      <div className="flex justify-center py-6">
+      <div className="flex justify-center py-6 ">
         <div className="w-64">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
             {roundNames[0]}

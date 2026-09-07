@@ -65,6 +65,13 @@ export const knockoutMatchSchema = z.object({
 });
 
 
+export const playerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  position: z.string().optional(),
+});
+
+
 
 export type Tournament = z.infer<typeof tournamentSchema>;
 export type TournamentStatus = z.infer<typeof tournamentStatusEnum>;
@@ -75,3 +82,4 @@ export type MatchStatus = z.infer<typeof matchStatusEnum>;
 export type Match = z.infer<typeof matchSchema>;
 export type Group = z.infer<typeof groupSchema>;
 export type KnockoutMatch = z.infer<typeof knockoutMatchSchema>;
+export type Player = z.infer<typeof playerSchema>;

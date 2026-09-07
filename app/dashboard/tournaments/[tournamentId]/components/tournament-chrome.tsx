@@ -13,12 +13,14 @@ interface TournamentChromeProps {
 export default function TournamentChrome({ tournament, teams }: TournamentChromeProps) {
   const pathname = usePathname();
   const groupStageBase = `/dashboard/tournaments/${tournament.id}/group-stage`;
+  const TeamBase = `/dashboard/tournaments/${tournament.id}/teams`;
   const isGroupDetailPage =
     pathname.startsWith(`${groupStageBase}/`) && pathname !== groupStageBase;
+  const isTeamDetailPage =
+    pathname.startsWith(`${TeamBase}/`) && pathname !== TeamBase;
 
-  if (isGroupDetailPage) {
-    // Still show the stage tabs so the user can navigate away —
-    // just hide the name/description/teams block on this page.
+  if (isGroupDetailPage || isTeamDetailPage) {
+
     return (
      <></>
     );

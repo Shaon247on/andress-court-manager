@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Tournament, Team } from "../../lib/types";
 
 interface TournamentHeaderProps {
@@ -49,21 +50,22 @@ export default function TournamentHeader({
 
       {/* Teams strip */}
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-500">
-          Teams ({teams.length})
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {teams.map((team) => (
-            <div
-              key={team.id}
-              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700"
-            >
-              <span className="text-base leading-none">{team.flag}</span>
-              <span>{team.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+  <p className="mb-2 text-xs font-medium text-slate-500">
+    Teams ({teams.length})
+  </p>
+  <div className="flex flex-wrap gap-2">
+    {teams.map((team) => (
+      <Link
+        key={team.id}
+        href={`/dashboard/tournaments/${tournament.id}/teams/${team.id}`}
+        className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50"
+      >
+        <span className="text-base leading-none">{team.flag}</span>
+        <span>{team.name}</span>
+      </Link>
+    ))}
+  </div>
+</div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Match } from "./types";
+import type { Match,TeamType  } from "./types";
 
 export interface StandingRow {
   teamId: string;
@@ -96,4 +96,9 @@ export function getMatchDisplayStatus( match: Pick<Match, "status" | "scheduledA
 export function getRoundNames(totalRounds: number): string[] {
   const namesFromFinal = ["Final", "Semifinals", "Quarterfinals", "Round of 16", "Round of 32"];
   return namesFromFinal.slice(0, totalRounds).reverse();
+}
+
+export function getSlotsPerTeam(teamType: TeamType): number {
+  const match = teamType.match(/^(\d+)v/);
+  return match ? parseInt(match[1], 10) : 0;
 }
