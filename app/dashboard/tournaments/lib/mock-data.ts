@@ -172,48 +172,50 @@ if (seedGroup) {
   if (m3) Object.assign(m3, { status: "scheduled", scheduledAt: "2026-08-30T18:00:00" }); // past → awaiting score
   if (m4) Object.assign(m4, { status: "scheduled", scheduledAt: "2026-09-15T18:00:00" }); // future → upcoming
 }
-
-function generateKnockoutBracket(
-  tournamentId: string,
-  teamIds: string[],
-  seedRoundZero: boolean
-): KnockoutMatch[] {
+function generateKnockoutBracket(tournamentId: string, teamIds: string[]): KnockoutMatch[] {
   const matches: KnockoutMatch[] = [];
   let round = 0;
   let slots = teamIds.length;
+  let poolOffset = 0;
 
   while (slots > 1) {
     const matchCount = slots / 2;
     for (let i = 0; i < matchCount; i++) {
+      // NOTE: every round is seeded with placeholder teams purely so Set Match /
+      // Edit / Final Score are testable on every match in the UI. Real bracket
+      // advancement (winner of round N feeding round N+1) isn't wired up yet —
+      // that's deferred until match state is connected to actual results.
+      const homeIdx = (poolOffset + i * 2) % teamIds.length;
+      let awayIdx = (poolOffset + i * 2 + 1) % teamIds.length;
+      if (awayIdx === homeIdx) awayIdx = (awayIdx + 1) % teamIds.length;
+
       matches.push({
         id: `${tournamentId}-ko-r${round}-m${i}`,
         round,
         position: i,
-        homeTeamId: seedRoundZero && round === 0 ? teamIds[i * 2] : null,
-        awayTeamId: seedRoundZero && round === 0 ? teamIds[i * 2 + 1] : null,
+        homeTeamId: teamIds[homeIdx] ?? null,
+        awayTeamId: teamIds[awayIdx] ?? null,
         status: "unscheduled",
         scheduledAt: null,
         homeScore: null,
         awayScore: null,
       });
     }
+    poolOffset += 3; // vary pairing per round so it isn't visibly identical
     slots = matchCount;
     round++;
   }
   return matches;
 }
 
-// Generated for every tournament — knockout-only tournaments get real teams in
-// round 0; group-stage tournaments start as TBD vs TBD until qualifiers are decided.
 export const mockKnockoutByTournament: Record<string, KnockoutMatch[]> = Object.fromEntries(
   mockTournaments.map((t) => {
     const teamIds = (mockTeamsByTournament[t.id] ?? []).map((team) => team.id);
-    return [t.id, generateKnockoutBracket(t.id, teamIds, !t.hasGroupStage)];
+    return [t.id, generateKnockoutBracket(t.id, teamIds)];
   })
 );
 
-// Seed a couple of first-round matches on a knockout-only tournament so the UI
-// demonstrates every state (completed / awaiting score).
+// Seed a couple of matches so the UI demonstrates every state.
 const koSeed = mockKnockoutByTournament["t-005"];
 if (koSeed?.[0]) {
   Object.assign(koSeed[0], {

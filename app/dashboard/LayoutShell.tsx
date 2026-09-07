@@ -99,7 +99,7 @@ export function LayoutShell({
         isSidebarOpen={isSidebarOpen}
         user={user}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-6 xl:p-4">
         {children}
       </main>
     </div>
