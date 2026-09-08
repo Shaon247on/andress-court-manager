@@ -71,6 +71,39 @@ export const playerSchema = z.object({
   position: z.string().optional(),
 });
 
+export const teamCountOptions = [4, 8, 16, 32] as const;
+
+export const additionalInfoItemSchema = z.object({
+  label: z.string().min(1, "Label is required"),
+  value: z.string().min(1, "Value is required"),
+});
+
+export const createTournamentSchema = z
+  .object({
+    name: z.string().min(3, "Name must be at least 3 characters"),
+    shortDescription: z
+      .string()
+      .min(10, "Description must be at least 10 characters")
+      .max(200, "Keep it under 200 characters"),
+    prizeMoney: z.coerce.number().min(0, "Prize money can't be negative"),
+    rulesAndRegulations: z.string().min(10, "Please add rules and regulations"),
+    teamType: teamTypeEnum,
+    category: tournamentCategoryEnum,
+    teamCount: z.coerce.number(),
+    entryFeePerTeam: z.coerce.number().min(0, "Entry fee can't be negative"),
+    hasGroupStage: z.boolean(),
+    additionalInfo: z.array(additionalInfoItemSchema).default([]),
+  })
+  .refine((data) => (teamCountOptions as readonly number[]).includes(data.teamCount), {
+    message: "Select a valid number of teams",
+    path: ["teamCount"],
+  })
+  .refine((data) => !data.hasGroupStage || data.teamCount >= 8, {
+    message: "Group stage requires at least 8 teams",
+    path: ["hasGroupStage"],
+  });
+
+
 
 
 export type Tournament = z.infer<typeof tournamentSchema>;
@@ -83,3 +116,4 @@ export type Match = z.infer<typeof matchSchema>;
 export type Group = z.infer<typeof groupSchema>;
 export type KnockoutMatch = z.infer<typeof knockoutMatchSchema>;
 export type Player = z.infer<typeof playerSchema>;
+export type CreateTournamentInput = z.infer<typeof createTournamentSchema>;

@@ -102,3 +102,7 @@ export function getSlotsPerTeam(teamType: TeamType): number {
   const match = teamType.match(/^(\d+)v/);
   return match ? parseInt(match[1], 10) : 0;
 }
+
+export function canEnableGroupStage(teamCount: number): boolean {
+  return teamCount >= 8;
+}
