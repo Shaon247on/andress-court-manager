@@ -16,8 +16,10 @@ export interface CourtResult {
   surface: string;
   court_type: 'indoor' | 'outdoor' | 'both';
   game_formats: string[];
-  status: 'active' | 'under_maintenance' | 'closed';
+  status: 'active' | 'under_maintenance' | 'closed' | 'upcoming' | "merged";
   price_per_hour: string;
+  merged_court_ids: string[];
+  is_merged: boolean;
   bookings: number;
   revenue: string;
   created_at: string;
@@ -86,4 +88,63 @@ export interface UpdateStatusPayload {
 export interface UpdateStatusResponse {
   success: boolean;
   message: string;
+}
+
+
+// marge courts
+
+export interface MergedCourtItem {
+  id: string;
+  name: string;
+  court_type: string;
+  game_format: string;
+}
+
+export interface MergedCourt {
+  id: string;
+  name: string;
+  court_type: 'indoor' | 'outdoor' | 'both';
+  sport: string;
+  surface: string;
+  game_format: string;
+  game_formats: string[];
+  location: string;
+  start_time: string;
+  end_time: string;
+  price_per_hour: string;
+  status: 'upcoming' | 'merged' | 'completed' | 'cancelled' | 'active';
+  current_status: string;
+  courts: MergedCourtItem[];
+  created_at: string;
+}
+
+export interface MergedCourtsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: MergedCourt[];
+}
+
+export interface MergedCourtsQuery {
+  q?: string;
+  status?: 'upcoming' | 'merged' | 'completed' | 'cancelled' | 'active';
+  page?: number;
+}
+
+export interface CreateMergedCourtPayload {
+  court_ids: string[];
+  start_time: string;
+  end_time: string;
+  price: number;
+}
+
+export interface MergedCourtResponse {
+  success: boolean;
+  message: string;
+  data: MergedCourt;
+}
+
+export interface MergedCourtDetailResponse {
+  success: boolean;
+  data: MergedCourt;
 }

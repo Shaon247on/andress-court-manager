@@ -11,7 +11,7 @@ export default async function CourtsPage({
   const queryParams = {
     search: params?.search,
     court_type: params?.court_type as 'indoor' | 'outdoor' | 'both' | undefined,
-    status: params?.status as 'active' | 'under_maintenance' | 'closed' | undefined,
+    status: params?.status as 'active' | 'under_maintenance' | 'closed' | "marged",
     page: params?.page ? parseInt(params.page) : undefined,
   };
 
@@ -19,6 +19,8 @@ export default async function CourtsPage({
     getCourtsAction(queryParams),
     getCourtStatsAction(),
   ]);
+
+  console.log("All courts:", courtsRes, statsRes)
 
   const courts = courtsRes.success ? courtsRes.data.results : [];
   const total = courtsRes.success ? courtsRes.data.count : 0;

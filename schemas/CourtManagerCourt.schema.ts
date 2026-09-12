@@ -28,3 +28,16 @@ export const updateCourtSchema = z.object({
 export const updateStatusSchema = z.object({
   status: z.enum(["active", "under_maintenance", "closed"]),
 });
+
+export const mergedCourtsQuerySchema = z.object({
+  q: z.string().optional(),
+  status: z.enum(["upcoming", "merged", "completed", "cancelled", "active"]).optional(),
+  page: z.coerce.number().min(1).optional(),
+});
+
+export const createMergedCourtSchema = z.object({
+  court_ids: z.array(z.string()).min(2, "At least 2 courts are required to merge"),
+  start_time: z.string().min(1, "Start time is required"),
+  end_time: z.string().min(1, "End time is required"),
+  price: z.number().min(0, "Price must be at least 0"),
+});

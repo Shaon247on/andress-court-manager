@@ -136,7 +136,7 @@ export default function CourtDetails({ court }: CourtDetailsProps) {
             <div>
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Game Formats</div>
               <div className="flex flex-wrap gap-1.5">
-                {court.game_formats.map((format) => (
+                {court?.game_formats?.map((format) => (
                   <GameFormatBadge key={format} format={format} />
                 ))}
               </div>

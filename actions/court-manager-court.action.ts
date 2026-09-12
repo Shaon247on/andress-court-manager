@@ -1,5 +1,3 @@
-// actions/court-manager-court.action.ts
-
 "use server";
 
 import { handleApiError, handleActionResponse } from "@/lib/errors";
@@ -287,6 +285,163 @@ export async function deleteCourtAction(courtId: string): Promise<
     }
     
     return { success: true, message: result.data?.message ?? "Court deleted successfully" };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// Marge court apis
+
+
+import {
+  mergedCourtsQuerySchema,
+  createMergedCourtSchema,
+} from "@/schemas/CourtManagerCourt.schema";
+import type {
+  MergedCourtsResponse,
+  MergedCourtsQuery,
+  CreateMergedCourtPayload,
+  MergedCourtResponse,
+  MergedCourtDetailResponse,
+} from "@/types/CourtManagerCourt.type";
+
+// ── GET merged courts ──────────────────────────────────────────────────────
+
+export async function getMergedCourtsAction(rawParams: unknown): Promise<
+  | { success: true; data: MergedCourtsResponse }
+  | { success: false; message: string }
+> {
+  const parseResult = mergedCourtsQuerySchema.safeParse(rawParams);
+  const params: MergedCourtsQuery = parseResult.success ? parseResult.data : {};
+
+  try {
+    const api = await getServerApi();
+    const response = await api.get("/manager/courts/merged/", { params });
+    const result = handleActionResponse(response.data);
+    
+    if (!result.success) {
+      return { success: false, message: result.message ?? "Failed to load merged courts" };
+    }
+    
+    return { success: true, data: response.data as MergedCourtsResponse };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// ── CREATE merged court ────────────────────────────────────────────────────
+
+export async function createMergedCourtAction(raw: unknown): Promise<
+  | { success: true; data: MergedCourtResponse }
+  | { success: false; message: string }
+> {
+  const parsed = createMergedCourtSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid input",
+    };
+  }
+
+  const body: CreateMergedCourtPayload = parsed.data;
+
+  try {
+    const api = await getServerApi();
+    const response = await api.post("/manager/courts/merge/", body);
+    const result = handleActionResponse(response.data);
+    
+    if (!result.success) {
+      return { success: false, message: result.message ?? "Failed to merge courts" };
+    }
+    
+    return { success: true, data: result.data as MergedCourtResponse };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// ── UPDATE merged court ────────────────────────────────────────────────────
+
+export async function updateMergedCourtAction(
+  mergedId: string,
+  raw: unknown
+): Promise<
+  | { success: true; data: MergedCourtResponse }
+  | { success: false; message: string }
+> {
+  if (!mergedId) return { success: false, message: "Merged court ID is required" };
+
+  const parsed = createMergedCourtSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid input",
+    };
+  }
+
+  const body: CreateMergedCourtPayload = parsed.data;
+
+  try {
+    const api = await getServerApi();
+    const response = await api.patch(`/manager/courts/merge/${mergedId}/`, body);
+    const result = handleActionResponse(response.data);
+    
+    if (!result.success) {
+      return { success: false, message: result.message ?? "Failed to update merged court" };
+    }
+    
+    return { success: true, data: result.data as MergedCourtResponse };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// ── DELETE merged court ────────────────────────────────────────────────────
+
+export async function deleteMergedCourtAction(mergedId: string): Promise<
+  | { success: true; message: string }
+  | { success: false; message: string }
+> {
+  if (!mergedId) return { success: false, message: "Merged court ID is required" };
+
+  try {
+    const api = await getServerApi();
+    const response = await api.delete(`/manager/courts/merge/${mergedId}/`);
+    const result = handleActionResponse(response.data);
+    
+    if (!result.success) {
+      return { success: false, message: result.message ?? "Failed to cancel merged court" };
+    }
+    
+    return { success: true, message: result.data?.message ?? "Merged court cancelled successfully" };
+  } catch (error) {
+    const err = handleApiError(error);
+    return { success: false, message: err.message };
+  }
+}
+
+// ── GET merged court details ───────────────────────────────────────────────
+
+export async function getMergedCourtDetailsAction(mergedId: string): Promise<
+  | { success: true; data: MergedCourtDetailResponse }
+  | { success: false; message: string }
+> {
+  if (!mergedId) return { success: false, message: "Merged court ID is required" };
+
+  try {
+    const api = await getServerApi();
+    const response = await api.get(`/manager/courts/merge/${mergedId}/`);
+    const result = handleActionResponse(response.data);
+    
+    if (!result.success) {
+      return { success: false, message: result.message ?? "Failed to load merged court details" };
+    }
+    
+    return { success: true, data: result.data as MergedCourtDetailResponse };
   } catch (error) {
     const err = handleApiError(error);
     return { success: false, message: err.message };

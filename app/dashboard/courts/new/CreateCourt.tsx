@@ -64,7 +64,7 @@ export default function CreateCourt() {
     const res = await createCourtAction(formData);
     if (res.success) {
       toast.success(res.data.message);
-      router.push(`/dashboard/courts/${res.data.court.id}`);
+      router.push(`/dashboard/courts`);
     } else {
       toast.error(res.message);
     }
