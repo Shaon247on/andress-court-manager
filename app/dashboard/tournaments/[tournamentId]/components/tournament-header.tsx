@@ -1,5 +1,13 @@
+// app/dashboard/tournaments/[tournamentId]/components/tournament-header.tsx
+
 import Link from "next/link";
 import type { Tournament, Team } from "../../lib/types";
+import {
+  formatCategory,
+  getSlotsPerTeam,
+  getTeamFee,
+  CURRENCY_SYMBOLS,
+} from "../../lib/rules";
 
 interface TournamentHeaderProps {
   tournament: Tournament;
@@ -10,15 +18,22 @@ export default function TournamentHeader({
   tournament,
   teams,
 }: TournamentHeaderProps) {
+  const currencySymbol = CURRENCY_SYMBOLS[tournament.currency] ?? "$";
+  const slotsPerTeam = getSlotsPerTeam(tournament.teamType);
+  const teamFee = getTeamFee(tournament.entryFeePerPlayer, tournament.teamType);
+
   const infoItems = [
     {
-      label: "Prize money",
-      value: `$${tournament.prizeMoney.toLocaleString()}`,
+      label: "Format",
+      value: tournament.format === "group" ? "Group Stage" : "Knockout",
     },
-    { label: "Entry fee", value: `$${tournament.entryFeePerTeam} / team` },
+    {
+      label: "Entry fee",
+      value: `${currencySymbol}${tournament.entryFeePerPlayer} / player (${currencySymbol}${teamFee} / team)`,
+    },
     { label: "Capacity", value: `${tournament.capacity} players` },
     { label: "Team type", value: tournament.teamType },
-    { label: "Category", value: tournament.category, capitalize: true },
+    { label: "Category", value: formatCategory(tournament.category) },
   ];
 
   return (
@@ -40,11 +55,7 @@ export default function TournamentHeader({
             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5"
           >
             <p className="text-xs text-slate-500">{item.label}</p>
-            <p
-              className={`mt-0.5 text-sm font-medium text-slate-800 ${
-                item.capitalize ? "capitalize" : ""
-              }`}
-            >
+            <p className="mt-0.5 text-sm font-medium text-slate-800">
               {item.value}
             </p>
           </div>
@@ -52,7 +63,7 @@ export default function TournamentHeader({
       </div>
 
       {/* Teams strip */}
-      <div>
+      {/* <div>
         <p className="mb-2 text-xs font-medium text-slate-500">
           Teams ({teams.length})
         </p>
@@ -68,7 +79,7 @@ export default function TournamentHeader({
             </Link>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

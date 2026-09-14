@@ -1,4 +1,4 @@
-import type { Match,TeamType  } from "./types";
+import type { Match,TeamType, TournamentCategory, Currency  } from "./types";
 
 export interface StandingRow {
   teamId: string;
@@ -105,4 +105,27 @@ export function getSlotsPerTeam(teamType: TeamType): number {
 
 export function canEnableGroupStage(teamCount: number): boolean {
   return teamCount >= 8;
+}
+
+export function formatCategory(category: TournamentCategory): string {
+  return category
+    .split("_")
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// ── NEW: currency symbol ──
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  BDT: "৳",
+};
+
+// ── NEW: auto-calculate per-team fee from per-player fee ──
+export function getTeamFee(
+  entryFeePerPlayer: number,
+  teamType: TeamType
+): number {
+  return entryFeePerPlayer * getSlotsPerTeam(teamType);
 }

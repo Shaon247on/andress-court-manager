@@ -1,3 +1,5 @@
+// app/dashboard/courts/CourtsList.tsx
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -14,9 +16,9 @@ import {
   Settings2,
   ChevronRight,
   Merge,
-  History,
   Layers,
   MapPin,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +46,6 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import SearchInput from "@/components/common/SearchInput";
 import Pagination from "@/components/common/Pagination";
-import SelectFilter from "@/components/common/SelectFilter";
 import { MergeCourtDialog } from "./MergeCourtDialog";
 import {
   updateCourtStatusAction,
@@ -123,17 +124,6 @@ const GameFormatBadge = ({ format }: { format: string }) => {
   );
 };
 
-const StatusOptions = [
-  { label: "Active", value: "active" },
-  { label: "Under Maintenance", value: "under_maintenance" },
-  { label: "Merged", value: "merged" },
-];
-
-const CourtTypeOptions = [
-  { label: "Indoor", value: "indoor" },
-  { label: "Outdoor", value: "outdoor" },
-];
-
 export default function CourtsList({
   courts = [],
   total = 0,
@@ -173,7 +163,6 @@ export default function CourtsList({
   };
 
   // ── Check if a court row should be expandable ──
-  // A court is expandable if: is_merged === true AND status === 'active'
   const isMergedActive = (court: CourtResult) => {
     return court.is_merged === true && court.status === "active";
   };
@@ -187,6 +176,12 @@ export default function CourtsList({
       return next;
     });
   };
+
+  // ── Count merged courts ──
+  const mergedCount = useMemo(
+    () => courts.filter((c) => c.is_merged === true).length,
+    [courts],
+  );
 
   // ── Status change handler ──
   const handleStatusChange = async () => {
@@ -269,63 +264,71 @@ export default function CourtsList({
         <p className="text-slate-500">Manage all courts and their details</p>
       </div>
 
-      {/* KPI Cards */}
+      {/* ── KPI Cards: Total | Available + Maintenance combined | Merged ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 shrink-0">
-        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
-          <div className="text-sm font-medium text-slate-500 mb-1">
+        {/* Total Courts — soft slate/blue */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 sm:p-6">
+          <div className="text-sm font-medium text-slate-600 mb-1">
             Total Courts
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-slate-900">
             {stats?.total ?? 0}
           </div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
-          <div className="text-sm font-medium text-slate-500 mb-1">
-            Available
+
+        {/* Availability — soft green/amber combined */}
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 sm:p-6">
+          <div className="text-sm font-medium text-emerald-700 mb-1">
+            Availability
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-green-600">
-            {stats?.available ?? 0}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-bold text-emerald-600">
+              {stats?.available ?? 0}
+            </span>
+            <span className="text-sm text-emerald-600/80">available</span>
+            <span className="text-emerald-300">•</span>
+            <span className="text-2xl sm:text-3xl font-bold text-amber-500">
+              {stats?.under_maintenance ?? 0}
+            </span>
+            <span className="text-sm text-amber-600/80">maintenance</span>
           </div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
-          <div className="text-sm font-medium text-slate-500 mb-1">
-            Under Maintenance
+
+        {/* Merged Courts — soft purple */}
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 sm:p-6">
+          <div className="text-sm font-medium text-purple-600 mb-1 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5" />
+            Merged Courts
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-orange-500">
-            {stats?.under_maintenance ?? 0}
+          <div className="text-2xl sm:text-3xl font-bold text-purple-700">
+            {mergedCount}
           </div>
         </div>
       </div>
 
-      {/* Filters and Actions */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 shrink-0">
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 items-start sm:items-center w-full md:w-auto">
-          <div className="w-full sm:w-64">
-            <SearchInput name="search" placeholder="Search courts..." />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <SelectFilter
-              name="court_type"
-              placeholder="All Types"
-              options={CourtTypeOptions}
-            />
-            <SelectFilter
-              name="status"
-              placeholder="All Status"
-              options={StatusOptions}
-            />
-          </div>
+      {/* ── Search + Actions row ── */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-3 shrink-0">
+        {/* Search only (filters removed) */}
+        <div className="w-full md:w-80">
+          <SearchInput
+            name="search"
+            placeholder="Search by name, type, or status..."
+          />
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard/courts/merged">
+        <div className="flex justify-center shrink-0">
+          <Link href="/dashboard/courts/new">
             <Button
-              variant="outline"
-              className="h-10 px-4 border-border text-sm font-medium"
+              variant="primary"
+              className="h-14 px-10 text-base font-semibold bg-emerald-500 hover:bg-emerald-600 shadow-md"
             >
-              <History className="w-4 h-4 mr-2" />
-              Merge History
+              <Plus className="w-5 h-5 mr-2" />
+              Add Court
             </Button>
           </Link>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3 w-full md:w-auto justify-end">
           <Button
             variant="outline"
             className="h-10 px-4 border-border text-sm font-medium"
@@ -343,14 +346,10 @@ export default function CourtsList({
               Schedule
             </Button>
           </Link>
-
-          <Link href="/dashboard/courts/new" className="w-full sm:w-auto">
-            <Button variant="primary" className="h-10 w-full sm:w-auto">
-              <span className="mr-2">+</span> Add Court
-            </Button>
-          </Link>
         </div>
       </div>
+
+      {/* ── Big green centered Add Court button ── */}
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden flex-1 flex flex-col">
@@ -437,47 +436,52 @@ export default function CourtsList({
                           )}
                         </TableCell>
 
-                        {/* Court Name */}
+                        {/* Court Name — larger text */}
                         <TableCell className="px-4 sm:px-6 py-4">
                           <div>
-                            <div className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2 flex-wrap">
+                            <div className="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2 flex-wrap">
                               {court.name}
                               {court.is_merged && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
                                   <Layers className="w-3 h-3" />
                                   MERGED
                                 </span>
                               )}
                               {canExpand && childCourts.length > 0 && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white text-purple-700 border border-purple-200">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white text-purple-700 border border-purple-200">
                                   {childCourts.length} courts
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-slate-500">
+                            <div className="text-sm text-slate-500 mt-0.5">
                               Location: {court.location}
                             </div>
-                            <div className="text-xs text-slate-500 sm:hidden mt-1">
+                            <div className="text-sm text-slate-500 sm:hidden mt-1">
                               <CourtTypeBadge type={court.court_type} />
                             </div>
                           </div>
                         </TableCell>
 
-                        {/* Type / Surface */}
+                        {/* Type / Surface — larger text */}
                         <TableCell className="px-4 sm:px-6 py-4 hidden md:table-cell">
-                          <div className="font-medium text-slate-900 capitalize">
+                          <div className="font-semibold text-slate-900 text-base capitalize">
                             {court.court_type}
                           </div>
-                          <div className="text-slate-500 text-xs capitalize">
+                          <div className="text-slate-500 text-sm capitalize">
                             {court.surface}
                           </div>
                         </TableCell>
 
-                        {/* Formats */}
+                        {/* Formats — larger badges */}
                         <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell">
                           <div className="flex flex-wrap gap-1">
                             {court.game_formats.map((format) => (
-                              <GameFormatBadge key={format} format={format} />
+                              <span
+                                key={format}
+                                className="inline-flex px-2.5 py-1 rounded text-sm font-medium bg-slate-100 text-slate-700"
+                              >
+                                {format}
+                              </span>
                             ))}
                           </div>
                         </TableCell>
@@ -489,18 +493,18 @@ export default function CourtsList({
 
                         {/* Price */}
                         <TableCell className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                          <div className="font-bold text-slate-900">
+                          <div className="font-bold text-slate-900 text-base">
                             €{court.price_per_hour}
                           </div>
                         </TableCell>
 
                         {/* Bookings */}
-                        <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell text-slate-900">
+                        <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell text-slate-900 text-base">
                           {court.bookings}
                         </TableCell>
 
                         {/* Revenue */}
-                        <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell font-bold text-green-600">
+                        <TableCell className="px-4 sm:px-6 py-4 hidden lg:table-cell font-bold text-green-600 text-base">
                           €{parseFloat(court.revenue).toLocaleString()}
                         </TableCell>
 
@@ -522,7 +526,7 @@ export default function CourtsList({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       router.push(
-                                        `/dashboard/courts/marged/${court.id}`,
+                                        `/dashboard/courts/merged/${court.id}`,
                                       );
                                     }}
                                   >
@@ -622,7 +626,7 @@ export default function CourtsList({
                         </TableCell>
                       </TableRow>
 
-                      {/* ── Expanded Row: Show child courts with full column data ── */}
+                      {/* Expanded row for merged active courts */}
                       <AnimatePresence>
                         {canExpand && isExpanded && (
                           <TableRow className="bg-transparent hover:bg-transparent">
@@ -638,16 +642,15 @@ export default function CourtsList({
                                 className="overflow-hidden"
                               >
                                 <div className="bg-gradient-to-br from-purple-50 to-white px-4 sm:px-6 py-5 border-y border-purple-100">
-                                  {/* Section Header */}
                                   <div className="flex items-center gap-2 mb-4">
                                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100">
                                       <Layers className="w-3.5 h-3.5 text-purple-600" />
                                     </div>
                                     <div>
-                                      <h4 className="text-sm font-bold text-slate-900">
+                                      <h4 className="text-base font-bold text-slate-900">
                                         Courts in this Merge
                                       </h4>
-                                      <p className="text-xs text-slate-500">
+                                      <p className="text-sm text-slate-500">
                                         {childCourts.length}{" "}
                                         {childCourts.length === 1
                                           ? "court"
@@ -670,40 +673,36 @@ export default function CourtsList({
                                           }}
                                           className="rounded-lg border border-slate-200 bg-white overflow-hidden hover:border-purple-300 hover:shadow-sm transition-all"
                                         >
-                                          {/* Child Court Row with full column data */}
                                           <div className="grid grid-cols-12 gap-3 items-center px-4 py-3">
-                                            {/* Index + Name */}
                                             <div className="col-span-12 sm:col-span-4 flex items-center gap-3">
                                               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-xs font-bold text-purple-700">
                                                 {idx + 1}
                                               </div>
                                               <div className="min-w-0">
-                                                <p className="font-semibold text-slate-900 text-sm truncate">
+                                                <p className="font-semibold text-slate-900 text-base truncate">
                                                   {childCourt.name}
                                                 </p>
-                                                <p className="text-xs text-slate-500 truncate flex items-center gap-1">
+                                                <p className="text-sm text-slate-500 truncate flex items-center gap-1">
                                                   <MapPin className="w-3 h-3" />
                                                   {childCourt.location}
                                                 </p>
                                               </div>
                                             </div>
 
-                                            {/* Type / Surface */}
                                             <div className="col-span-6 sm:col-span-2">
-                                              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
+                                              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
                                                 Type
                                               </p>
-                                              <p className="text-xs font-medium text-slate-700 capitalize">
+                                              <p className="text-sm font-medium text-slate-700 capitalize">
                                                 {childCourt.court_type}
                                               </p>
-                                              <p className="text-[10px] text-slate-500 capitalize">
+                                              <p className="text-xs text-slate-500 capitalize">
                                                 {childCourt.surface}
                                               </p>
                                             </div>
 
-                                            {/* Formats */}
                                             <div className="col-span-6 sm:col-span-2">
-                                              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
+                                              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                                                 Formats
                                               </p>
                                               <div className="flex flex-wrap gap-0.5">
@@ -712,14 +711,14 @@ export default function CourtsList({
                                                   .map((format) => (
                                                     <span
                                                       key={format}
-                                                      className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700"
+                                                      className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700"
                                                     >
                                                       {format}
                                                     </span>
                                                   ))}
                                                 {childCourt.game_formats
                                                   .length > 3 && (
-                                                  <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">
+                                                  <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">
                                                     +
                                                     {childCourt.game_formats
                                                       .length - 3}
@@ -728,9 +727,8 @@ export default function CourtsList({
                                               </div>
                                             </div>
 
-                                            {/* Status */}
                                             <div className="col-span-6 sm:col-span-1">
-                                              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
+                                              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                                                 Status
                                               </p>
                                               <StatusBadge
@@ -738,32 +736,29 @@ export default function CourtsList({
                                               />
                                             </div>
 
-                                            {/* Price */}
                                             <div className="col-span-6 sm:col-span-1">
-                                              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
+                                              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
                                                 Price
                                               </p>
-                                              <p className="text-xs font-bold text-slate-900">
+                                              <p className="text-sm font-bold text-slate-900">
                                                 €{childCourt.price_per_hour}
                                               </p>
                                             </div>
 
-                                            {/* Bookings */}
                                             <div className="col-span-6 sm:col-span-1">
-                                              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
+                                              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
                                                 Bookings
                                               </p>
-                                              <p className="text-xs font-medium text-slate-700">
+                                              <p className="text-sm font-medium text-slate-700">
                                                 {childCourt.bookings}
                                               </p>
                                             </div>
 
-                                            {/* Revenue */}
                                             <div className="col-span-6 sm:col-span-1">
-                                              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
+                                              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">
                                                 Revenue
                                               </p>
-                                              <p className="text-xs font-bold text-green-600">
+                                              <p className="text-sm font-bold text-green-600">
                                                 €
                                                 {parseFloat(
                                                   childCourt.revenue,
@@ -784,7 +779,6 @@ export default function CourtsList({
                                     </div>
                                   )}
 
-                                  {/* Quick Actions */}
                                   <div className="mt-4 flex items-center justify-end gap-2">
                                     <Button
                                       variant="outline"

@@ -9,74 +9,90 @@ export const mockTournaments: Tournament[] = [
   {
     id: "t-001",
     name: "Summer Cup 2026",
-    shortDescription: "Annual 5-a-side summer tournament open to all clubs.",
-    category: "open",
+    shortDescription:
+      "Annual 5-a-side summer tournament open to all clubs. Prizes: 1st $500, 2nd $300.",
+    rulesAndRegulations:
+      "Standard 5v5 rules. Two 15-minute halves. Max 5 substitutions per team.",
+    category: "low_beginner",
     teamType: "5v5",
     teamCount: 8,
     capacity: 40,
-    entryFeePerTeam: 50,
-    prizeMoney: 1000,
-    hasGroupStage: true,
+    entryFeePerPlayer: 10,
+    currency: "USD",
+    format: "group",
     status: "ongoing",
     createdAt: "2026-06-01",
   },
   {
     id: "t-002",
     name: "Rookie Knockout",
-    shortDescription: "Beginner-friendly knockout-only tournament.",
-    category: "beginners",
+    shortDescription:
+      "Beginner-friendly knockout-only tournament. Prize: 1st $150, 2nd $50.",
+    rulesAndRegulations:
+      "Knockout format. 6v6 rules. 20-minute matches. No offside.",
+    category: "low_beginner",
     teamType: "6v6",
     teamCount: 4,
     capacity: 24,
-    entryFeePerTeam: 20,
-    prizeMoney: 200,
-    hasGroupStage: false,
+    entryFeePerPlayer: 5,
+    currency: "USD",
+    format: "knockout",
     status: "upcoming",
     createdAt: "2026-08-10",
   },
   {
     id: "t-003",
     name: "Elite Championship",
-    shortDescription: "Advanced-level tournament with group and knockout stages.",
-    category: "advanced",
+    shortDescription:
+      "Advanced-level tournament with group and knockout stages. Prizes: 1st $3000, 2nd $1500.",
+    rulesAndRegulations:
+      "Advanced 7v7 rules. Group stage + knockout. Two 25-minute halves.",
+    category: "high_advanced",
     teamType: "7v7",
     teamCount: 16,
     capacity: 112,
-    entryFeePerTeam: 100,
-    prizeMoney: 5000,
-    hasGroupStage: true,
+    entryFeePerPlayer: 15,
+    currency: "USD",
+    format: "group",
     status: "ongoing",
     createdAt: "2026-05-20",
   },
   {
     id: "t-004",
     name: "Mid-Level Masters",
-    shortDescription: "Intermediate 8v8 league-style groups leading to knockout.",
-    category: "intermediate",
+    shortDescription:
+      "Intermediate 8v8 league-style groups leading to knockout. Prizes: 1st $1000, 2nd $500.",
+    rulesAndRegulations:
+      "Intermediate 8v8 rules. Group stage leading to single-elimination knockouts.",
+    category: "medium_intermediate",
     teamType: "8v8",
     teamCount: 8,
     capacity: 64,
-    entryFeePerTeam: 75,
-    prizeMoney: 1500,
-    hasGroupStage: true,
+    entryFeePerPlayer: 10,
+    currency: "USD",
+    format: "group",
     status: "completed",
     createdAt: "2026-03-15",
   },
   {
     id: "t-005",
     name: "City Cup Qualifiers",
-    shortDescription: "Direct knockout to decide the city cup finalists.",
-    category: "open",
+    shortDescription:
+      "Direct knockout to decide the city cup finalists. Prizes: 1st $2000, 2nd $800.",
+    rulesAndRegulations:
+      "Standard 11v11 rules. Single-elimination knockout only.",
+    category: "medium_advanced",
     teamType: "11v11",
     teamCount: 8,
     capacity: 176,
-    entryFeePerTeam: 150,
-    prizeMoney: 3000,
-    hasGroupStage: false,
+    entryFeePerPlayer: 12,
+    currency: "USD",
+    format: "knockout",
     status: "upcoming",
     createdAt: "2026-08-25",
   },
 ];
+
 
 const countryPool: Omit<Team, "id">[] = [
   { name: "Brazil", flag: "🇧🇷" },
@@ -118,10 +134,26 @@ export const mockTeamsByTournament: Record<string, Team[]> = {
 const PLAYER_POSITIONS = ["GK", "DEF", "MID", "FWD"] as const;
 
 const playerNamePool = [
-  "Liam Carter", "Noah Bennett", "Ethan Brooks", "Mason Reed", "Lucas Hayes",
-  "Oliver Grant", "Elijah Ward", "James Foster", "Benjamin Cole", "Henry Pierce",
-  "Alexander Cruz", "Daniel Hart", "Matthew Reyes", "Jackson Blake", "Sebastian Fox",
-  "David Nolan", "Joseph Lane", "Samuel Reid", "Owen Marsh", "Wyatt Doyle",
+  "Liam Carter",
+  "Noah Bennett",
+  "Ethan Brooks",
+  "Mason Reed",
+  "Lucas Hayes",
+  "Oliver Grant",
+  "Elijah Ward",
+  "James Foster",
+  "Benjamin Cole",
+  "Henry Pierce",
+  "Alexander Cruz",
+  "Daniel Hart",
+  "Matthew Reyes",
+  "Jackson Blake",
+  "Sebastian Fox",
+  "David Nolan",
+  "Joseph Lane",
+  "Samuel Reid",
+  "Owen Marsh",
+  "Wyatt Doyle",
 ];
 
 // The searchable pool shown in the Add Player dialog.
@@ -133,8 +165,15 @@ export const mockAvailablePlayers: Player[] = playerNamePool.map((name, i) => ({
 
 function buildRoster(teamId: string, filledCount: number): Player[] {
   return Array.from({ length: filledCount }, (_, i) => {
-    const source = mockAvailablePlayers[(teamId.length + i * 3) % mockAvailablePlayers.length];
-    return { id: `${teamId}-roster-${i + 1}`, name: source.name, position: source.position };
+    const source =
+      mockAvailablePlayers[
+        (teamId.length + i * 3) % mockAvailablePlayers.length
+      ];
+    return {
+      id: `${teamId}-roster-${i + 1}`,
+      name: source.name,
+      position: source.position,
+    };
   });
 }
 
@@ -151,7 +190,6 @@ mockTournaments.forEach((tournament) => {
   });
 });
 
-
 function roundRobinMatches(groupId: string, teamIds: string[]): Match[] {
   const matches: Match[] = [];
   let index = 1;
@@ -165,6 +203,7 @@ function roundRobinMatches(groupId: string, teamIds: string[]): Match[] {
         scheduledAt: null,
         homeScore: null,
         awayScore: null,
+        courtName: null, // ← NEW
       });
       index++;
     }
@@ -205,12 +244,35 @@ export const mockGroupsByTournament: Record<string, Group[]> = {
 const seedGroup = mockGroupsByTournament["t-001"]?.[0];
 if (seedGroup) {
   const [m1, m2, m3, m4] = seedGroup.matches;
-  if (m1) Object.assign(m1, { status: "completed", scheduledAt: "2026-08-20T15:00:00", homeScore: 2, awayScore: 1 });
-  if (m2) Object.assign(m2, { status: "completed", scheduledAt: "2026-08-21T17:00:00", homeScore: 0, awayScore: 0 });
-  if (m3) Object.assign(m3, { status: "scheduled", scheduledAt: "2026-08-30T18:00:00" }); // past → awaiting score
-  if (m4) Object.assign(m4, { status: "scheduled", scheduledAt: "2026-09-15T18:00:00" }); // future → upcoming
+  if (m1)
+    Object.assign(m1, {
+      status: "completed",
+      scheduledAt: "2026-08-20T15:00:00",
+      homeScore: 2,
+      awayScore: 1,
+    });
+  if (m2)
+    Object.assign(m2, {
+      status: "completed",
+      scheduledAt: "2026-08-21T17:00:00",
+      homeScore: 0,
+      awayScore: 0,
+    });
+  if (m3)
+    Object.assign(m3, {
+      status: "scheduled",
+      scheduledAt: "2026-08-30T18:00:00",
+    }); // past → awaiting score
+  if (m4)
+    Object.assign(m4, {
+      status: "scheduled",
+      scheduledAt: "2026-09-15T18:00:00",
+    }); // future → upcoming
 }
-function generateKnockoutBracket(tournamentId: string, teamIds: string[]): KnockoutMatch[] {
+function generateKnockoutBracket(
+  tournamentId: string,
+  teamIds: string[],
+): KnockoutMatch[] {
   const matches: KnockoutMatch[] = [];
   let round = 0;
   let slots = teamIds.length;
@@ -237,6 +299,7 @@ function generateKnockoutBracket(tournamentId: string, teamIds: string[]): Knock
         scheduledAt: null,
         homeScore: null,
         awayScore: null,
+        courtName: null, // ← NEW
       });
     }
     poolOffset += 3; // vary pairing per round so it isn't visibly identical
@@ -246,12 +309,15 @@ function generateKnockoutBracket(tournamentId: string, teamIds: string[]): Knock
   return matches;
 }
 
-export const mockKnockoutByTournament: Record<string, KnockoutMatch[]> = Object.fromEntries(
-  mockTournaments.map((t) => {
-    const teamIds = (mockTeamsByTournament[t.id] ?? []).map((team) => team.id);
-    return [t.id, generateKnockoutBracket(t.id, teamIds)];
-  })
-);
+export const mockKnockoutByTournament: Record<string, KnockoutMatch[]> =
+  Object.fromEntries(
+    mockTournaments.map((t) => {
+      const teamIds = (mockTeamsByTournament[t.id] ?? []).map(
+        (team) => team.id,
+      );
+      return [t.id, generateKnockoutBracket(t.id, teamIds)];
+    }),
+  );
 
 // Seed a couple of matches so the UI demonstrates every state.
 const koSeed = mockKnockoutByTournament["t-005"];
@@ -264,5 +330,8 @@ if (koSeed?.[0]) {
   });
 }
 if (koSeed?.[1]) {
-  Object.assign(koSeed[1], { status: "scheduled", scheduledAt: "2026-08-05T18:00:00" }); // past → awaiting score
+  Object.assign(koSeed[1], {
+    status: "scheduled",
+    scheduledAt: "2026-08-05T18:00:00",
+  }); // past → awaiting score
 }

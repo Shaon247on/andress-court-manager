@@ -10,26 +10,31 @@ interface TournamentChromeProps {
   teams: Team[];
 }
 
-export default function TournamentChrome({ tournament, teams }: TournamentChromeProps) {
+export default function TournamentChrome({
+  tournament,
+  teams,
+}: TournamentChromeProps) {
   const pathname = usePathname();
   const groupStageBase = `/dashboard/tournaments/${tournament.id}/group-stage`;
-  const TeamBase = `/dashboard/tournaments/${tournament.id}/teams`;
+  const teamBase = `/dashboard/tournaments/${tournament.id}/teams`;
+
   const isGroupDetailPage =
     pathname.startsWith(`${groupStageBase}/`) && pathname !== groupStageBase;
+
   const isTeamDetailPage =
-    pathname.startsWith(`${TeamBase}/`) && pathname !== TeamBase;
+    pathname.startsWith(`${teamBase}/`) && pathname !== teamBase;
 
   if (isGroupDetailPage || isTeamDetailPage) {
-
-    return (
-     <></>
-    );
+    return <></>;
   }
 
   return (
     <>
       <TournamentHeader tournament={tournament} teams={teams} />
-      <StageTabs tournamentId={tournament.id} hasGroupStage={tournament.hasGroupStage} />
+      <StageTabs
+        tournamentId={tournament.id}
+        hasGroupStage={tournament.format === "group"}
+      />
     </>
   );
 }

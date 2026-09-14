@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { TournamentForm } from "./components/tournament-form";
+import CreateTournamentForm from "./create-form";
 
 export default function CreateTournamentPage() {
   return (
@@ -12,7 +12,7 @@ export default function CreateTournamentPage() {
         <ChevronLeft className="h-4 w-4" />
         Back to tournaments
       </Link>
-      <TournamentForm />
+      <CreateTournamentForm />
     </div>
   );
 }
