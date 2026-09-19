@@ -15,9 +15,9 @@ export default function GroupStagePage({ params }: GroupStagePageProps) {
   const tournament = mockTournaments.find((t) => t.id === params.tournamentId);
   if (!tournament) notFound();
 
-  if (!tournament.hasGroupStage) {
-    redirect(`/dashboard/tournaments/${params.tournamentId}/knockout-stage`);
-  }
+  // if (!tournament.hasGroupStage) {
+  //   redirect(`/dashboard/tournaments/${params.tournamentId}/knockout-stage`);
+  // }
 
   const groups = mockGroupsByTournament[tournament.id] ?? [];
   const teams = mockTeamsByTournament[tournament.id] ?? [];
