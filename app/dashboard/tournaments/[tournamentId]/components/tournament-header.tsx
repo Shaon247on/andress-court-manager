@@ -25,7 +25,7 @@ export default function TournamentHeader({
   const infoItems = [
     {
       label: "Format",
-      value: tournament.format === "group" ? "Group Stage" : "Knockout",
+      value: tournament.format === "group_stage" ? "Group Stage" : "Knockout",
     },
     {
       label: "Entry fee",

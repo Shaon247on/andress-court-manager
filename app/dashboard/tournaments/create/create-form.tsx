@@ -1,21 +1,17 @@
-// app/dashboard/tournaments/create/create-form.tsx
 
 "use client";
 
-import { useRouter } from "next/navigation";
 import { TournamentForm } from "../components/tournament-form";
+import { createTournamentAction } from "@/actions/manager-tournament.action";
 import type { TournamentFormInput } from "../lib/types";
 
 export default function CreateTournamentForm() {
-  const router = useRouter();
-
   const handleSubmit = async (values: TournamentFormInput) => {
-    // TODO: replace with real server action
-    // const res = await createTournamentAction(values);
-    console.log("Create tournament:", values);
-
-    // Simulated success for now
-    return { success: true };
+    const res = await createTournamentAction(values);
+    if (res.success) {
+      return { success: true };
+    }
+    return { success: false, message: res.message };
   };
 
   return <TournamentForm mode="create" onSubmitAction={handleSubmit} />;

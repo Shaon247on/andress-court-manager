@@ -2,33 +2,47 @@
 
 "use client";
 
-import React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MoreVertical, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import type { Tournament, TournamentStatus, TournamentCategory } from "../lib/types";
-import { formatCategory, CURRENCY_SYMBOLS } from "../lib/rules";
+import { Button } from "@/components/ui/button";
+import type { TournamentAPI } from "../lib/tournament.types";
+import { TournamentFormInput } from "../lib/tournamment.schema";
 import { cn } from "@/lib/utils";
 import SearchInput from "@/components/common/SearchInput";
 import SelectFilter from "@/components/common/SelectFilter";
 import Pagination from "@/components/common/Pagination";
+import { TournamentForm } from "./tournament-form";
+import {
+  deleteTournamentAction,
+  updateTournamentAction,
+} from "@/actions/manager-tournament.action";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 10;
 
-const statusStyles: Record<TournamentStatus, string> = {
+const statusStyles: Record<string, string> = {
   upcoming: "bg-blue-50 text-blue-700 border-blue-200",
   ongoing: "bg-emerald-50 text-emerald-700 border-emerald-200",
   completed: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-// ── 9-level category options ──
-const CATEGORY_OPTIONS: { label: string; value: TournamentCategory }[] = [
+const CATEGORY_OPTIONS = [
   { label: "Low Beginner", value: "low_beginner" },
   { label: "Medium Beginner", value: "medium_beginner" },
   { label: "High Beginner", value: "high_beginner" },
@@ -41,30 +55,51 @@ const CATEGORY_OPTIONS: { label: string; value: TournamentCategory }[] = [
 ];
 
 interface TournamentsTableProps {
-  data: Tournament[];
+  data: TournamentAPI[];
+  total: number;
 }
 
-export default function TournamentsTable({ data }: TournamentsTableProps) {
+export default function TournamentsTable({
+  data,
+  total,
+}: TournamentsTableProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const search = (searchParams.get("search") ?? "").toLowerCase();
-  const category = searchParams.get("category");
-  const status = searchParams.get("status");
-  const page = parseInt(searchParams.get("page") || "1", 10) || 1;
-
-  const filtered = data.filter((t) => {
-    const matchesSearch = search ? t.name.toLowerCase().includes(search) : true;
-    const matchesCategory = category ? t.category === category : true;
-    const matchesStatus = status ? t.status === status : true;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const start = (page - 1) * PAGE_SIZE;
-  const paginated = filtered.slice(start, start + PAGE_SIZE);
+  const [editing, setEditing] = useState<TournamentAPI | null>(null);
+  const [deleting, setDeleting] = useState<TournamentAPI | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const goToTournament = (id: string) => {
     router.push(`/dashboard/tournaments/${id}`);
+  };
+
+  // ── Edit submit ──
+  const handleEditSubmit = async (values: TournamentFormInput) => {
+    if (!editing) return { success: false, message: "No tournament selected" };
+
+    const res = await updateTournamentAction(editing.id, values);
+    if (res.success) {
+      toast.success("Tournament updated", { description: values.name });
+      setEditing(null);
+      router.refresh();
+      return { success: true };
+    }
+    return { success: false, message: res.message };
+  };
+
+  // ── Delete ──
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setDeleteLoading(true);
+    const res = await deleteTournamentAction(deleting.id);
+    if (res.success) {
+      toast.success(res.data.message);
+      setDeleting(null);
+      router.refresh();
+    } else {
+      toast.error(res.message);
+    }
+    setDeleteLoading(false);
   };
 
   return (
@@ -108,8 +143,8 @@ export default function TournamentsTable({ data }: TournamentsTableProps) {
             </tr>
           </thead>
           <tbody>
-            {paginated.map((t) => {
-              const currencySymbol = CURRENCY_SYMBOLS[t.currency] ?? "$";
+            {data.map((t) => {
+              const currencySymbol = "€";
 
               return (
                 <tr
@@ -120,27 +155,29 @@ export default function TournamentsTable({ data }: TournamentsTableProps) {
                   <td className="px-4 py-3">
                     <p className="font-medium text-slate-800">{t.name}</p>
                     <p className="line-clamp-1 text-xs text-slate-500">
-                      {t.shortDescription}
+                      {t.short_description || "No description"}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {formatCategory(t.category)}
+                    {t.skill_category_display}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{t.teamType}</td>
-                  <td className="px-4 py-3 text-slate-600">{t.teamCount}</td>
+                  <td className="px-4 py-3 text-slate-600">{t.team_type}</td>
                   <td className="px-4 py-3 text-slate-600">
-                    {t.format === "group" ? "Group + Knockout" : "Knockout only"}
+                    {t.number_of_teams}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {t.format_display}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
                     {currencySymbol}
-                    {t.entryFeePerPlayer} / player
+                    {parseFloat(t.entry_fee_per_player)} / player
                   </td>
                   <td className="px-4 py-3">
                     <Badge
                       variant="outline"
                       className={cn("capitalize", statusStyles[t.status])}
                     >
-                      {t.status}
+                      {t.status_display}
                     </Badge>
                   </td>
                   <td
@@ -157,21 +194,18 @@ export default function TournamentsTable({ data }: TournamentsTableProps) {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem
-                          onClick={() => goToTournament(t.id)}
-                        >
+                        <DropdownMenuItem onClick={() => goToTournament(t.id)}>
                           <Eye className="mr-2 h-4 w-4" />
                           View
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            router.push(`/dashboard/tournaments/${t.id}/edit`)
-                          }
-                        >
+                        <DropdownMenuItem onClick={() => setEditing(t)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                        <DropdownMenuItem
+                          onClick={() => setDeleting(t)}
+                          className="text-red-600 focus:text-red-600"
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
@@ -182,7 +216,7 @@ export default function TournamentsTable({ data }: TournamentsTableProps) {
               );
             })}
 
-            {paginated.length === 0 && (
+            {data.length === 0 && (
               <tr>
                 <td
                   colSpan={8}
@@ -196,7 +230,72 @@ export default function TournamentsTable({ data }: TournamentsTableProps) {
         </table>
       </div>
 
-      <Pagination total={filtered.length} pageSize={PAGE_SIZE} />
+      <Pagination total={total} pageSize={PAGE_SIZE} />
+
+      {/* ── Edit Dialog ── */}
+      <Dialog
+        open={!!editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+      >
+        <DialogContent className="md:min-w-2xl lg:min-w-3xl max-h-[90vh] overflow-y-auto p-0">
+          {editing && (
+            <TournamentForm
+              mode="edit"
+              initialValues={{
+                name: editing.name,
+                format: editing.format,
+                skill_category: editing.skill_category,
+                team_type: editing.team_type as any,
+                number_of_teams: editing.number_of_teams,
+                currency: editing.currency as any,
+                entry_fee_per_player: parseFloat(editing.entry_fee_per_player),
+                short_description: editing.short_description,
+                rules: editing.rules,
+                start_date: editing.start_date,
+                end_date: editing.end_date,
+              }}
+              onSubmitAction={handleEditSubmit}
+              onCancel={() => setEditing(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Dialog ── */}
+      <Dialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && setDeleting(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Tournament</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{deleting?.name}</span>? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleting(null)}
+              disabled={deleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              disabled={deleteLoading}
+            >
+              {deleteLoading && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

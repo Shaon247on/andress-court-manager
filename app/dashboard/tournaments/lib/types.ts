@@ -18,7 +18,7 @@ export const tournamentCategoryEnum = z.enum([
 ]);
 
 // ── NEW: group vs knockout mode ──
-export const tournamentFormatEnum = z.enum(["group", "knockout"]);
+export const tournamentFormatEnum = z.enum(["group_stage", "knockout"]);
 
 // ── NEW: currency ──
 export const currencyEnum = z.enum(["USD", "EUR", "GBP", "BDT"]);
@@ -47,7 +47,7 @@ export const teamSchema = z.object({
   flag: z.string(),
 });
 
-export const matchStatusEnum = z.enum(["unscheduled", "scheduled", "completed"]);
+export const matchStatusEnum = z.enum(["unscheduled", "scheduled", "ongoing", "completed", "cancelled"]);
 
 export const matchSchema = z.object({
   id: z.string(),
@@ -58,6 +58,9 @@ export const matchSchema = z.object({
   homeScore: z.number().nullable(),
   awayScore: z.number().nullable(),
   courtName: z.string().nullable().optional(),
+  match_time: z.string().nullable().optional(),
+  court_id: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export const groupSchema = z.object({
@@ -109,7 +112,7 @@ export const tournamentFormSchema = z
     (data) => (teamCountOptions as readonly number[]).includes(data.teamCount),
     { message: "Select a valid number of teams", path: ["teamCount"] }
   )
-  .refine((data) => data.format !== "group" || data.teamCount >= 8, {
+  .refine((data) => data.format !== "group_stage" || data.teamCount >= 8, {
     message: "Group stage requires at least 8 teams",
     path: ["format"],
   });

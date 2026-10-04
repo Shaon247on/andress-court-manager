@@ -1,5 +1,6 @@
 export interface ScheduleBooking {
   id: string;
+  court_id?: string;
   court_name: string;
   booking_type: 'regular' | 'lesson' | 'event';
   status: 'confirmed' | 'cancelled' | 'pending';
@@ -14,6 +15,7 @@ export interface ScheduleBooking {
   total_amount: string;
   game_owner: string;
   repeat_type: 'none' | 'weekly' | 'monthly';
+  participants?: Array<{ is_paid: boolean; [key: string]: unknown }>;
 }
 
 export interface CourtSchedule {

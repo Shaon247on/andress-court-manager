@@ -4,34 +4,45 @@
 
 import { ListOrdered, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { computeGroupStandings } from "@/app/dashboard/tournaments/lib/rules";
 import type { Group, Team } from "@/app/dashboard/tournaments/lib/types";
+import type { TournamentTeam } from "@/app/dashboard/tournaments/lib/tournament.types";
 import GroupStandingsTable from "./group-standings-table";
 import GroupMatchesTable from "./group-matches-table";
 
 interface GroupCardProps {
   group: Group;
   tournamentId: string;
-  teams: Team[];
+  teams: TournamentTeam[];
+  seedStart: number;
+  numberOfTeams: number;
   showMatches: boolean;
   onToggleMatches: () => void;
   isEditMode: boolean;
   selectedTeamId: string | null;
-  onTeamSelect: (teamId: string) => void;
+  onSeedSelect: (seed: number, teamId: string | null) => void;
+  onCreateTeam: (seed: number, name: string) => Promise<boolean>;
+  onRenameTeam: (teamId: string, name: string) => Promise<boolean>;
+  onDeleteTeam: (teamId: string) => void;
 }
 
 export default function GroupCard({
   group,
   tournamentId,
   teams,
+  seedStart,
+  numberOfTeams,
   showMatches,
   onToggleMatches,
   isEditMode,
   selectedTeamId,
-  onTeamSelect,
+  onSeedSelect,
+  onCreateTeam,
+  onRenameTeam,
+  onDeleteTeam,
 }: GroupCardProps) {
-  const teamsById = Object.fromEntries(teams.map((t) => [t.id, t]));
-  const rows = computeGroupStandings(group.teamIds, group.matches);
+  const teamsById: Record<string, Team> = Object.fromEntries(
+    teams.map((team) => [team.id, { id: team.id, name: team.name, flag: "" }])
+  );
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -70,12 +81,17 @@ export default function GroupCard({
           />
         ) : (
           <GroupStandingsTable
-            rows={rows}
+            teams={teams}
             teamsById={teamsById}
             tournamentId={tournamentId}
+            seedStart={seedStart}
+            numberOfTeams={numberOfTeams}
             isEditMode={isEditMode}
             selectedTeamId={selectedTeamId}
-            onTeamSelect={onTeamSelect}
+            onSeedSelect={onSeedSelect}
+            onCreateTeam={onCreateTeam}
+            onRenameTeam={onRenameTeam}
+            onDeleteTeam={onDeleteTeam}
           />
         )}
       </div>

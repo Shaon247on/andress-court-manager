@@ -1,17 +1,18 @@
 import { redirect, notFound } from "next/navigation";
-import { mockTournaments } from "../lib/mock-data";
+import { getTournamentDetailsAction } from "@/actions/manager-tournament.action";
 
 interface TournamentPageProps {
-  params: { tournamentId: string };
+  params: Promise<{ tournamentId: string }>;
 }
 
-export default function TournamentPage({ params }: TournamentPageProps) {
-  const tournament = mockTournaments.find((t) => t.id === params.tournamentId);
+export default async function TournamentPage({ params }: TournamentPageProps) {
+  const { tournamentId } = await params;
+  console.log("theid:",tournamentId)
+  const result = await getTournamentDetailsAction(tournamentId);
+  // if (!result.success) notFound();
 
-  if (!tournament) {
-    notFound();
-  }
+  console.log("detials:",result)
 
-  const target = tournament.hasGroupStage ? "group-stage" : "knockout-stage";
-  redirect(`/dashboard/tournaments/${params.tournamentId}/${target}`);
+  const target = result?.data?.format === "group_stage" ? "group-stage" : "knockout-stage";
+  redirect(`/dashboard/tournaments/${tournamentId}/${target}`);
 }

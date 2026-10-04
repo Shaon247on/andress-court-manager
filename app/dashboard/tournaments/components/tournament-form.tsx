@@ -1,3 +1,5 @@
+// app/dashboard/tournaments/components/tournament-form.tsx
+
 "use client";
 
 import { useEffect } from "react";
@@ -34,17 +36,11 @@ import {
 } from "@/components/ui/select";
 
 import {
-  tournamentFormSchema,
   teamCountOptions,
   teamTypeEnum,
-  tournamentCategoryEnum,
+  skillCategoryEnum,
   currencyEnum,
-  type TournamentFormInput,
-  type TeamType,
-  type TournamentCategory,
-  type Currency,
-  type TournamentFormat,
-} from "@/app/dashboard/tournaments/lib/types";
+} from "@/app/dashboard/tournaments/lib/tournament.types";
 import {
   canEnableGroupStage,
   getSlotsPerTeam,
@@ -53,21 +49,27 @@ import {
   CURRENCY_SYMBOLS,
 } from "@/app/dashboard/tournaments/lib/rules";
 import { cn } from "@/lib/utils";
+import { TournamentFormInput, tournamentFormSchema } from "../lib/tournamment.schema";
+import { Currency, TeamType } from "../lib/types";
 
 const teamTypeOptions = teamTypeEnum.options;
-const categoryOptions = tournamentCategoryEnum.options;
+const categoryOptions = skillCategoryEnum.options;
 const currencyOptions = currencyEnum.options;
 
 interface TournamentFormProps {
   mode: "create" | "edit";
   initialValues?: Partial<TournamentFormInput>;
-  onSubmitAction: (values: TournamentFormInput) => Promise<{ success: boolean; message?: string }>;
+  onSubmitAction: (
+    values: TournamentFormInput
+  ) => Promise<{ success: boolean; message?: string }>;
+  onCancel?: () => void;
 }
 
 export function TournamentForm({
   mode,
   initialValues,
   onSubmitAction,
+  onCancel,
 }: TournamentFormProps) {
   const router = useRouter();
 
@@ -75,22 +77,24 @@ export function TournamentForm({
     resolver: zodResolver(tournamentFormSchema),
     defaultValues: {
       name: "",
-      shortDescription: "",
-      rulesAndRegulations: "",
+      short_description: "",
+      rules: "",
       format: "knockout",
-      category: "low_beginner",
-      teamType: "5v5",
-      teamCount: 4,
-      entryFeePerPlayer: 0,
+      skill_category: "low_beginner",
+      team_type: "5v5",
+      number_of_teams: 4,
+      entry_fee_per_player: 0,
       currency: "USD",
+      start_date: null,
+      end_date: null,
       ...initialValues,
     },
   });
 
-  const teamType = form.watch("teamType");
-  const teamCount = form.watch("teamCount");
+  const teamType = form.watch("team_type");
+  const teamCount = form.watch("number_of_teams");
   const format = form.watch("format");
-  const entryFeePerPlayer = form.watch("entryFeePerPlayer");
+  const entryFeePerPlayer = form.watch("entry_fee_per_player");
   const currency = form.watch("currency");
 
   const groupStageEligible = canEnableGroupStage(teamCount);
@@ -99,9 +103,8 @@ export function TournamentForm({
   const teamFee = getTeamFee(entryFeePerPlayer || 0, teamType);
   const currencySymbol = CURRENCY_SYMBOLS[currency];
 
-  // If user picks "group" but then drops team count below 8, force back to knockout
   useEffect(() => {
-    if (!groupStageEligible && format === "group") {
+    if (!groupStageEligible && format === "group_stage") {
       form.setValue("format", "knockout");
     }
   }, [groupStageEligible, format, form]);
@@ -109,12 +112,12 @@ export function TournamentForm({
   async function onSubmit(data: TournamentFormInput) {
     const res = await onSubmitAction(data);
     if (res.success) {
-      toast.success(
-        mode === "create" ? "Tournament created" : "Tournament updated",
-        { description: data.name }
-      );
-      router.push("/dashboard/tournaments");
-      router.refresh();
+      if (mode === "create") {
+        toast.success("Tournament created", { description: data.name });
+        router.push("/dashboard/tournaments");
+        router.refresh();
+      }
+      // Edit mode: parent closes the dialog + refreshes
     } else {
       toast.error(res.message ?? "Something went wrong");
     }
@@ -122,8 +125,13 @@ export function TournamentForm({
 
   const isSubmitting = form.formState.isSubmitting;
 
+  const handleCancel = () => {
+    if (onCancel) onCancel();
+    else router.back();
+  };
+
   return (
-    <Card className="mx-auto w-full max-w-2xl">
+    <Card className="mx-auto w-full max-w-4xl border-none shadow-none">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold">
           {mode === "create" ? "Create Tournament" : "Edit Tournament"}
@@ -138,7 +146,7 @@ export function TournamentForm({
       <CardContent>
         <form id="form-tournament" onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup className="space-y-5">
-            {/* ── 1. Format selector (top, drives everything else) ── */}
+            {/* Format */}
             <Controller
               name="format"
               control={form.control}
@@ -148,11 +156,11 @@ export function TournamentForm({
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => field.onChange("group")}
+                      onClick={() => field.onChange("group_stage")}
                       disabled={!groupStageEligible}
                       className={cn(
                         "flex flex-col items-start gap-1 rounded-lg border-2 p-4 text-left transition-all",
-                        field.value === "group"
+                        field.value === "group_stage"
                           ? "border-teal-500 bg-teal-50"
                           : "border-slate-200 bg-white hover:border-slate-300",
                         !groupStageEligible && "opacity-50 cursor-not-allowed"
@@ -188,12 +196,14 @@ export function TournamentForm({
                       </span>
                     </button>
                   </div>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
 
-            {/* ── 2. Name ── */}
+            {/* Name */}
             <Controller
               name="name"
               control={form.control}
@@ -206,22 +216,21 @@ export function TournamentForm({
                     placeholder="Summer Cup 2026"
                     autoComplete="off"
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
 
-            {/* ── 3. Category (9-level) ── */}
+            {/* Category */}
             <Controller
-              name="category"
+              name="skill_category"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="t-category">Skill category</FieldLabel>
-                  <Select
-                    onValueChange={(v) => field.onChange(v as TournamentCategory)}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger id="t-category" className="w-full">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -233,15 +242,17 @@ export function TournamentForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
 
-            {/* ── 4. Team type & count ── */}
+            {/* Team type & count */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Controller
-                name="teamType"
+                name="team_type"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
@@ -261,17 +272,21 @@ export function TournamentForm({
                         ))}
                       </SelectContent>
                     </Select>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
 
               <Controller
-                name="teamCount"
+                name="number_of_teams"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="t-team-count">Number of teams</FieldLabel>
+                    <FieldLabel htmlFor="t-team-count">
+                      Number of teams
+                    </FieldLabel>
                     <Select
                       onValueChange={(v) => field.onChange(Number(v))}
                       value={String(field.value)}
@@ -287,13 +302,15 @@ export function TournamentForm({
                         ))}
                       </SelectContent>
                     </Select>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
             </div>
 
-            {/* ── 5. Currency & Entry fee (per player) ── */}
+            {/* Currency & Entry fee */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Controller
                 name="currency"
@@ -316,16 +333,21 @@ export function TournamentForm({
                         ))}
                       </SelectContent>
                     </Select>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
 
               <Controller
-                name="entryFeePerPlayer"
+                name="entry_fee_per_player"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid} className="sm:col-span-2">
+                  <Field
+                    data-invalid={fieldState.invalid}
+                    className="sm:col-span-2"
+                  >
                     <FieldLabel htmlFor="t-entry-fee">
                       Entry fee (per player)
                     </FieldLabel>
@@ -339,7 +361,9 @@ export function TournamentForm({
                         type="number"
                         min={0}
                         className="pl-8 pr-32"
-                        onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                        onChange={(e) =>
+                          field.onChange(e.target.valueAsNumber || 0)
+                        }
                       />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
                         {currencySymbol}
@@ -352,27 +376,75 @@ export function TournamentForm({
                       {currencySymbol}
                       {teamFee} per team
                     </FieldDescription>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
             </div>
 
-            {/* ── 6. Capacity preview ── */}
+            {/* Start / End dates */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Controller
+                name="start_date"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="t-start-date">Start date</FieldLabel>
+                    <Input
+                      {...field}
+                      id="t-start-date"
+                      type="date"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="end_date"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="t-end-date">End date</FieldLabel>
+                    <Input
+                      {...field}
+                      id="t-end-date"
+                      type="date"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </div>
+
+            {/* Capacity preview */}
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-xs text-slate-500">Total capacity (auto-calculated)</p>
+              <p className="text-xs text-slate-500">
+                Total capacity (auto-calculated)
+              </p>
               <p className="mt-0.5 text-sm font-medium text-slate-800">
                 {slotsPerTeam} players × {teamCount} teams = {capacity} players
               </p>
             </div>
 
-            {/* ── 7. Short description (with prize info) ── */}
+            {/* Short description */}
             <Controller
-              name="shortDescription"
+              name="short_description"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="t-description">Short description</FieldLabel>
+                  <FieldLabel htmlFor="t-description">
+                    Short description
+                  </FieldLabel>
                   <Textarea
                     {...field}
                     id="t-description"
@@ -382,14 +454,16 @@ export function TournamentForm({
                     aria-invalid={fieldState.invalid}
                   />
                   <FieldDescription>Under 200 characters.</FieldDescription>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
 
-            {/* ── 8. Rules & regulations ── */}
+            {/* Rules */}
             <Controller
-              name="rulesAndRegulations"
+              name="rules"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
@@ -402,7 +476,9 @@ export function TournamentForm({
                     className="min-h-32 resize-none"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -412,7 +488,7 @@ export function TournamentForm({
 
       <CardFooter>
         <div className="flex w-full justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button type="submit" form="form-tournament" disabled={isSubmitting}>

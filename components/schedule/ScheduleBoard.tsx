@@ -39,6 +39,7 @@ import {
   updateBookingAction,
   getBookingDetailsAction,
 } from "@/actions/manager-booking.action";
+import { updateTournamentMatchAction } from "@/actions/manager-tournament.action";
 import type {
   ScheduleResponse,
   ScheduleBooking,
@@ -104,6 +105,7 @@ export function ScheduleBoard({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const matchId = searchParams.get("match_id");
   const [isPending, startTransition] = useTransition();
 
   const [currentDate, setCurrentDate] = useState<Date>(() =>
@@ -226,6 +228,8 @@ export function ScheduleBoard({
 
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  const [tournamentMatchModalOpen, setTournamentMatchModalOpen] = useState(false);
+  const [tournamentMatchNote, setTournamentMatchNote] = useState("");
 
   const navigateToDate = (date: Date) => {
     setCurrentDate(date);
@@ -280,10 +284,48 @@ export function ScheduleBoard({
     const start = Math.min(dragStartSlot, dragCurrentSlot);
     let end = Math.max(dragStartSlot, dragCurrentSlot);
     if (start === end) end = start + 0.5;
-    setSelectedSlot({ courtId: dragCourt!, start, end });
+    const nextSlot = { courtId: dragCourt!, start, end };
+    setSelectedSlot(nextSlot);
     setEditingBooking(null);
-    setSheetOpen(true);
     setDragCourt(null);
+
+    if (matchId) {
+      setTournamentMatchNote("");
+      setTournamentMatchModalOpen(true);
+      return;
+    }
+
+    setSheetOpen(true);
+  };
+
+  const handleTournamentMatchConfirm = async () => {
+    if (!matchId || !selectedSlot) return;
+    const selectedDate = format(currentDate, "yyyy-MM-dd");
+    const selectedTime = hoursToTimeString(selectedSlot.start);
+    const matchTimeIso = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
+
+    const payload: { match_time: string; court_id: string; notes?: string } = {
+      match_time: matchTimeIso,
+      court_id: selectedSlot.courtId,
+    };
+
+    if (tournamentMatchNote.trim()) {
+      payload.notes = tournamentMatchNote.trim();
+    }
+
+    const response = await updateTournamentMatchAction(matchId, payload);
+    if (!response.success) {
+      toast.error(response.message || "Failed to update tournament match");
+      return;
+    }
+
+    toast.success("Tournament match scheduled");
+    setTournamentMatchModalOpen(false);
+    setTournamentMatchNote("");
+    setSelectedSlot(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("match_id");
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   // ── Drag an existing booking to reschedule it (time AND court) ──────────
@@ -532,7 +574,7 @@ export function ScheduleBoard({
     if (!movingBooking || !isDraggingBooking || !movingBooking.hasMoved)
       return null;
     const containerEl = gridCanvasRef.current;
-    const colEl = courtColumnRefs.current.get(movingBooking.targetCourtId);
+    const colEl = courtColumnRefs?.current?.get(movingBooking.targetCourtId);
     if (!containerEl || !colEl) return null;
 
     const containerRect = containerEl.getBoundingClientRect();
@@ -1094,6 +1136,79 @@ export function ScheduleBoard({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Tournament match confirmation modal */}
+      <AnimatePresence>
+        {tournamentMatchModalOpen && matchId && selectedSlot && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setTournamentMatchModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-900">Confirm match booking</h3>
+                <button
+                  onClick={() => setTournamentMatchModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-3 text-sm text-slate-600">
+                <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div className="font-medium text-slate-800">Selected slot</div>
+                  <div>{format(currentDate, "EEEE, MMMM d, yyyy")}</div>
+                  <div>
+                    {hoursToTimeString(selectedSlot.start)} - {hoursToTimeString(selectedSlot.end)}
+                  </div>
+                  <div>
+                    {courtsData.find((court) => court.id === selectedSlot.courtId)?.name ?? "Court"}
+                  </div>
+                </div>
+                <label className="block space-y-1.5">
+                  <span className="font-medium text-slate-700">Note</span>
+                  <textarea
+                    value={tournamentMatchNote}
+                    onChange={(event) => setTournamentMatchNote(event.target.value)}
+                    rows={3}
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500"
+                    placeholder="Optional note for this match"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setTournamentMatchModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => void handleTournamentMatchConfirm()}>Confirm</Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Cancel Booking Modal */}
       <AnimatePresence>

@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarPlus,
   Pencil,
@@ -11,12 +12,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { getMatchDisplayStatus } from "@/app/dashboard/tournaments/lib/rules";
 import type { Match, Team } from "@/app/dashboard/tournaments/lib/types";
 import {
   SetMatchDialog,
   FinalScoreDialog,
 } from "@/app/dashboard/tournaments/[tournamentId]/components/match-dialogs";
+import { updateTournamentMatchAction } from "@/actions/manager-tournament.action";
 
 interface MatchRowProps {
   match: Match;
@@ -24,12 +27,21 @@ interface MatchRowProps {
 }
 
 export default function MatchRow({ match, teamsById }: MatchRowProps) {
+  const router = useRouter();
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scoreOpen, setScoreOpen] = useState(false);
 
   const home = teamsById[match.homeTeamId];
   const away = teamsById[match.awayTeamId];
   const displayStatus = getMatchDisplayStatus(match);
+
+  const redirectToScheduleFlow = () => {
+    const params = new URLSearchParams({ match_id: match.id });
+    if (match.scheduledAt) {
+      params.set("date", match.scheduledAt.split("T")[0]);
+    }
+    router.push(`/dashboard?${params.toString()}`);
+  };
 
   const [datePart, timePart] = match.scheduledAt
     ? match.scheduledAt.split("T")
@@ -91,7 +103,7 @@ export default function MatchRow({ match, teamsById }: MatchRowProps) {
             size="sm"
             variant="outline"
             className="h-7 gap-1 px-2 text-[10px]"
-            onClick={() => setScheduleOpen(true)}
+            onClick={redirectToScheduleFlow}
           >
             <CalendarPlus className="h-3 w-3" />
             Set Match
@@ -102,10 +114,10 @@ export default function MatchRow({ match, teamsById }: MatchRowProps) {
             size="sm"
             variant="outline"
             className="h-7 gap-1 px-2 text-[10px]"
-            onClick={() => setScheduleOpen(true)}
+            onClick={redirectToScheduleFlow}
           >
             <Pencil className="h-3 w-3" />
-            Edit Date
+            Edit Match
           </Button>
         )}
         {displayStatus === "awaiting-score" && (
@@ -126,7 +138,7 @@ export default function MatchRow({ match, teamsById }: MatchRowProps) {
             onClick={() => setScoreOpen(true)}
           >
             <Pencil className="h-3 w-3" />
-            Edit Score
+            Completed
           </Button>
         )}
       </div>
@@ -138,9 +150,20 @@ export default function MatchRow({ match, teamsById }: MatchRowProps) {
         awayTeamName={away?.name ?? ""}
         defaultDate={datePart}
         defaultTime={timePart?.slice(0, 5)}
-        onSave={(date, time) =>
-          console.log("Save schedule", match.id, date, time)
-        }
+        onSave={async (date, time) => {
+          if (!date || !time) return;
+          const iso = new Date(`${date}T${time}:00`).toISOString();
+          const result = await updateTournamentMatchAction(match.id, {
+            match_time: iso,
+            notes: match.notes ?? "",
+          });
+          if (!result.success) {
+            toast.error(result.message || "Failed to update the tournament match");
+            return;
+          }
+          toast.success("Match updated");
+          router.refresh();
+        }}
       />
       <FinalScoreDialog
         open={scoreOpen}
@@ -151,7 +174,19 @@ export default function MatchRow({ match, teamsById }: MatchRowProps) {
         awayTeamFlag={away?.flag ?? ""}
         defaultHomeScore={match.homeScore}
         defaultAwayScore={match.awayScore}
-        onSave={(hs, as_) => console.log("Save score", match.id, hs, as_)}
+        onSave={async (hs, as_) => {
+          const result = await updateTournamentMatchAction(match.id, {
+            home_score: hs,
+            away_score: as_,
+            status: "completed",
+          });
+          if (!result.success) {
+            toast.error(result.message || "Failed to save the score");
+            return;
+          }
+          toast.success("Score saved");
+          router.refresh();
+        }}
       />
     </div>
   );

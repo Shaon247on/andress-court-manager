@@ -33,7 +33,7 @@ export default function TournamentChrome({
       <TournamentHeader tournament={tournament} teams={teams} />
       <StageTabs
         tournamentId={tournament.id}
-        hasGroupStage={tournament.format === "group"}
+        hasGroupStage={tournament.format === "group_stage"}
       />
     </>
   );

@@ -98,16 +98,16 @@ export function getRoundNames(totalRounds: number): string[] {
   return namesFromFinal.slice(0, totalRounds).reverse();
 }
 
-export function getSlotsPerTeam(teamType: TeamType): number {
-  const match = teamType.match(/^(\d+)v/);
-  return match ? parseInt(match[1], 10) : 0;
+export function getSlotsPerTeam(teamType: TeamType | string): number {
+  const m = String(teamType).match(/^(\d+)v/);
+  return m ? parseInt(m[1], 10) : 0;
 }
 
 export function canEnableGroupStage(teamCount: number): boolean {
   return teamCount >= 8;
 }
 
-export function formatCategory(category: TournamentCategory): string {
+export function formatCategory(category: string): string {
   return category
     .split("_")
     .map((w) => w[0].toUpperCase() + w.slice(1))
@@ -115,7 +115,7 @@ export function formatCategory(category: TournamentCategory): string {
 }
 
 // ── NEW: currency symbol ──
-export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",
   EUR: "€",
   GBP: "£",
@@ -125,7 +125,7 @@ export const CURRENCY_SYMBOLS: Record<Currency, string> = {
 // ── NEW: auto-calculate per-team fee from per-player fee ──
 export function getTeamFee(
   entryFeePerPlayer: number,
-  teamType: TeamType
+  teamType: TeamType | string
 ): number {
   return entryFeePerPlayer * getSlotsPerTeam(teamType);
 }
