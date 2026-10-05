@@ -110,9 +110,9 @@ export default function ManagerTeamList({
         </div>
       </div>
 
-      <div className="flex justify-end mb-4 shrink-0">
-        <Button variant="primary" className="h-10 px-4" onClick={() => setIsAddModalOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-2" />
+      <div className="flex justify-center mb-4 shrink-0">
+        <Button variant="primary" className="h-14 px-6 text-lg" onClick={() => setIsAddModalOpen(true)}>
+          <UserPlus className="size-5 mr-2" />
           Add Staff
         </Button>
       </div>

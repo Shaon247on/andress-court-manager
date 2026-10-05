@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Info,
   Eye,
+  EyeOff,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,14 @@ import {
 } from "@/components/ui/dialog";
 import { withdrawAction } from "@/actions/revenue.action";
 import type { RevenueResponse } from "@/types/Revenue.type";
+import type { PayoutMethod } from "@/types/PayoutMethod.type";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface RevenueOverviewProps {
   data: RevenueResponse | null;
+  defaultPayoutMethod: PayoutMethod | null;
   errorMessage?: string;
 }
 
@@ -127,12 +130,14 @@ const AmountDisplay = ({ amount, className }: { amount: string; className?: stri
 
 export default function RevenueOverview({
   data,
+  defaultPayoutMethod,
   errorMessage,
 }: RevenueOverviewProps) {
   const router = useRouter();
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAccountNumber, setShowAccountNumber] = useState(false);
 
   if (errorMessage) {
     return (
@@ -286,7 +291,7 @@ export default function RevenueOverview({
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Amount (€)
           </label>
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
             <div className="flex flex-col md:flex-row gap-3">
               <Input
                 placeholder="Enter amount"
@@ -305,9 +310,58 @@ export default function RevenueOverview({
                 Request Withdrawal
               </Button>
             </div>
-            <Link href={"/dashboard/settings/payment-methods"}>
-              <Button>Add Payment Method</Button>
+            <Link href="/dashboard/settings/payment-methods" className="shrink-0">
+              <Button className="h-14 text-lg">Add Payment Method</Button>
             </Link>
+            <div className="flex min-h-[136px] w-full min-w-0 items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:w-[380px] sm:shrink-0">
+              <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+            {defaultPayoutMethod ? (
+              <div className="min-w-0">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-semibold text-slate-700">Default payout method</p>
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    Default
+                  </span>
+                </div>
+                <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-1 text-xs">
+                  <div>
+                    <dt className="text-slate-500">Account type</dt>
+                    <dd className="truncate font-medium text-slate-900">{defaultPayoutMethod.account_type}</dd>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <dt className="text-slate-500">Account number</dt>
+                    <dd className="col-span-2 flex min-w-0 items-center gap-1 font-mono font-medium text-slate-900">
+                      <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap">
+                        {showAccountNumber
+                          ? defaultPayoutMethod.account_number
+                          : `•••• ${defaultPayoutMethod.account_number.slice(-4)}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAccountNumber((isVisible) => !isVisible)}
+                        className="shrink-0 rounded p-0.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                        aria-label={showAccountNumber ? "Hide account number" : "Show account number"}
+                        aria-pressed={showAccountNumber}
+                        title={showAccountNumber ? "Hide account number" : "Show account number"}
+                      >
+                        {showAccountNumber ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Account holder</dt>
+                    <dd className="truncate font-medium text-slate-900">{defaultPayoutMethod.account_holder}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Added</dt>
+                    <dd className="font-medium text-slate-900">{formatDate(defaultPayoutMethod.created_at)}</dd>
+                  </div>
+                </dl>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">No default payment method</p>
+            )}
+          </div>
           </div>
           <p className="text-sm text-slate-500 font-medium">
             Withdrawal requests are processed weekly on Mondays. Maximum

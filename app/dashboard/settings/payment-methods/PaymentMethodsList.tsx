@@ -128,29 +128,31 @@ export default function PaymentMethodsList({ methods, errorMessage }: PaymentMet
             <p className="text-slate-500 mt-1">Manage your saved payment methods</p>
           </div>
         </div>
-        <Button 
-          variant="primary" 
-          className="h-10 px-5 rounded-lg text-sm font-semibold shadow-sm w-full sm:w-auto"
-          onClick={() => setAddDialogOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Card
-        </Button>
       </div>
 
-      <div className="max-w-4xl space-y-6 pb-10 w-full">
+      <div className="max-w-4xl mx-auto space-y-6 pb-10 w-full">
         {methods.length === 0 ? (
-          <div className="border border-slate-200 rounded-2xl p-8 text-center text-slate-500">
-            No payment methods added yet. Click &ldquo;Add Card&ldquo; to get started.
+          <div className="min-h-[55vh] flex flex-col items-center justify-center gap-4 text-center">
+            <CreditCard className="w-10 h-10 text-slate-400" />
+            <p className="text-slate-500">No payment methods added yet.</p>
+            <Button
+              variant="primary"
+              className="h-10 px-5 rounded-lg text-sm font-semibold shadow-sm"
+              onClick={() => setAddDialogOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Card
+            </Button>
           </div>
         ) : (
-          methods.map((method) => (
-            <div 
-              key={method.id} 
-              className={cn(
-                "border rounded-2xl p-4 sm:p-6 relative transition-all",
-                method.is_default ? "border-emerald-500 shadow-sm" : "border-slate-200"
-              )}
-            >
+          <>
+            {methods.map((method) => (
+              <div 
+                key={method.id} 
+                className={cn(
+                  "border rounded-2xl p-4 sm:p-6 relative transition-all",
+                  method.is_default ? "border-emerald-500 shadow-sm" : "border-slate-200"
+                )}
+              >
               <div className="flex justify-between items-start mb-6 sm:mb-8">
                 <div className="w-12 h-10 rounded text-xl flex items-center justify-center shrink-0 border bg-indigo-50 border-indigo-100 text-indigo-700 font-bold italic font-serif">
                   {method.account_type.charAt(0)}
@@ -223,8 +225,18 @@ export default function PaymentMethodsList({ methods, errorMessage }: PaymentMet
                   </div>
                 </div>
               </div>
+              </div>
+            ))}
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="primary"
+                className="h-10 px-5 rounded-lg text-sm font-semibold shadow-sm"
+                onClick={() => setAddDialogOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add Card
+              </Button>
             </div>
-          ))
+          </>
         )}
 
         {/* Security Information Footer */}

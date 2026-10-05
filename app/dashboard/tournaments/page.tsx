@@ -50,12 +50,8 @@ export default async function TournamentsPage({
             Manage ongoing, upcoming, and completed tournaments.
           </p>
         </div>
-        <Link href="/dashboard/tournaments/create">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Tournament
-          </Button>
-        </Link>
+        
+        <div className="w-1/3"/>
       </div>
 
       {/* Stats cards */}

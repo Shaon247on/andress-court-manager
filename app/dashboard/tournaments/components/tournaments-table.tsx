@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreVertical, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { MoreVertical, Eye, Pencil, Trash2, Loader2, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +33,7 @@ import {
   updateTournamentAction,
 } from "@/actions/manager-tournament.action";
 import { toast } from "sonner";
+import Link from "next/link";
 
 const PAGE_SIZE = 10;
 
@@ -105,26 +106,35 @@ export default function TournamentsTable({
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
         <div className="w-full sm:max-w-xs">
           <SearchInput name="search" placeholder="Search tournaments..." />
         </div>
-        <SelectFilter
-          name="category"
-          placeholder="Category"
-          clearLabel="All categories"
-          options={CATEGORY_OPTIONS}
-        />
-        <SelectFilter
-          name="status"
-          placeholder="Status"
-          clearLabel="All statuses"
-          options={[
-            { label: "Upcoming", value: "upcoming" },
-            { label: "Ongoing", value: "ongoing" },
-            { label: "Completed", value: "completed" },
-          ]}
-        />
+        <Link href="/dashboard/tournaments/create">
+          <Button className="gap-2 h-14 text-lg">
+            <Plus className="size-5" />
+            Add Tournament
+          </Button>
+        </Link>
+        <div className="flex items-center gap-4">
+          <SelectFilter
+            name="category"
+            placeholder="Category"
+            clearLabel="All categories"
+            options={CATEGORY_OPTIONS}
+          />
+
+          <SelectFilter
+            name="status"
+            placeholder="Status"
+            clearLabel="All statuses"
+            options={[
+              { label: "Upcoming", value: "upcoming" },
+              { label: "Ongoing", value: "ongoing" },
+              { label: "Completed", value: "completed" },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Table */}
